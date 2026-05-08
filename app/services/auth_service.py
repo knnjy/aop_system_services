@@ -10,17 +10,19 @@ class AuthService:
         self._account_dao = AccountDAO()
         self._student_dao = StudentDAO()
 
+    def get_student_data(self, id:str):
+        account_data = self._student_dao.get_profile_by_student_id(id)
+        if account_data is None:
+            raise HTTPException(status_code=404, detail="No matching student data located")
+        
+        return account_data
+        
     def login(self, request: LoginRequest) -> LoginResponse:
         account = self._account_dao.validate_credentials(request.username, request.password)
         if account is None:
             raise HTTPException(status_code=401, detail="Invalid username or password")
 
-        student_profile = self._student_dao.get_profile_by_student_id(request.username)
-        if student_profile is None:
-            raise HTTPException(
-                status_code=404,
-                detail="Authenticated account found, but no matching student profile was located",
-            )
+        student_profile = self.get_student_data(request.username)
 
         return LoginResponse(
             account_id=int(account["account_id"]),
@@ -28,3 +30,5 @@ class AuthService:
             role=account["role"],
             student_profile=student_profile,
         )
+    
+
