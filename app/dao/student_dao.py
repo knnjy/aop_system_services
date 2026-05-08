@@ -8,8 +8,11 @@ class StudentDAO:
         self._students = load_csv("student_raw_data.csv")
 
     def get_profile_by_student_id(self, student_id: str) -> Optional[Dict[str, Any]]:
-        match = self._students[self._students["Student ID"] == student_id]
+        # Normalize both DataFrame values and input
+        match = self._students[self._students["Student ID"].astype(str).str.strip() == student_id.strip()]
         if match.empty:
             return None
-
         return match.iloc[0].to_dict()
+
+
+
