@@ -15,7 +15,7 @@ def home():
 def login(request: LoginRequest) -> LoginResponse:
     return _auth_service.login(request)
 
-_acount_dao = StudentDAO()
+
 @router.get("/get-student-data/{id}")
 def get_data(id: str):
     response = _auth_service.get_student_data(id)
