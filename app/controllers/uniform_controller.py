@@ -2,7 +2,7 @@ from fastapi import APIRouter
 import pandas as pd
 
 router = APIRouter(prefix="/api/uniforms", tags=["Uniforms"])
-UNIFORMS_PATH = "data/uniforms/uniform_data.csv"
+UNIFORMS_PATH = "data/uniforms/products.csv"
 
 # LIST UNIFORMS
 @router.get("/list-uniforms")

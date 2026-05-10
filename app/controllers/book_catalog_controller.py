@@ -72,6 +72,8 @@ def update_book(book_code: str, title: str = None):
 @router.delete("/delete-book/{book_id}")
 def delete_book(book_id: int):
     df = _load_books()
+    
+    df["book_id"] = pd.to_numeric(df["book_id"], errors="coerce")
 
     if book_id not in df["book_id"].values:
         return {"error": "Book not found"}
@@ -80,7 +82,6 @@ def delete_book(book_id: int):
     df.to_csv(BOOKS_PATH, index=False)
 
     return {"message": f"Book {book_id} marked as deleted."}
-
 
 # ### UNIFORM CRUD
 
