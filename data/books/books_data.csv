@@ -1,5 +1,5 @@
 book_id,subject_code,Title,Price,stock_quantity,semester_available,date_added,date_updated,Program Related,availability
-1,6631,Micobook,375,232,1,2026-05-08,2026-05-08,ICS,available
+1,6631,Productivity and Quality Management Second Edition,375,232,1,2026-05-08,2026-05-08,BSOM,available
 2,1111,ELECTRICAL CIRCUITS 1 LABORATORY MANUAL,308,56,1,2026-05-08,2026-05-08,CEA,available
 3,GE04,The Life and Works of Jose Rizal,400,21,1,2026-04-09,2026-05-01,All,available
 4,PE02,"PATHFIT 2 EXERCISE-BASED FITNESS ACTIVITIES: Building Strength, Endurance",420,0,2,2026-05-05,2026-05-07,All,unavailable

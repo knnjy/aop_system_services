@@ -2,9 +2,7 @@ from fastapi import APIRouter
 import pandas as pd
 
 router = APIRouter(prefix="/api/uniforms", tags=["Uniforms"])
-
-UNIFORMS_PATH = "data/uniforms/products.csv"
-
+UNIFORMS_PATH = "data/uniforms/uniform_data.csv"
 
 # LIST UNIFORMS
 @router.get("/list-uniforms")
@@ -15,7 +13,6 @@ def list_uniforms():
         df = df[df["is_deleted"] == False]
 
     return df.to_dict(orient="records")
-
 
 # ADD UNIFORM
 @router.post("/add-uniform")
