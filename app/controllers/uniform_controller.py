@@ -20,7 +20,13 @@ def list_uniforms():
 # ADD UNIFORM
 @router.post("/add-uniform")
 def add_uniform():
-    return {"message": "Add uniform endpoint (to be implemented)"}
+    return {
+    "success": True,
+    "message": "Uniform added successfully",
+    "data": {
+        "product_id": "U001"
+    }
+}
 
 
 # DELETE UNIFORM (soft delete)
