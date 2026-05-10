@@ -46,26 +46,26 @@ def filter_books(program_related: str = None, title: str = None, semester_availa
 
 
 # Add new book data on books_data
-@router.post("/add-book")
-def add_book():
-    return {}
+# @router.post("/add-book")
+# def add_book():
+#     return {}
 
 
-# Update book data on books_data
-@router.put("/update-book/{book_code}")
-def update_book(book_code: str, title: str = None):
-    df = _load_books()
-    mask = _book_matches(df, book_code)
+# # Update book data on books_data
+# @router.put("/update-book/{book_code}")
+# def update_book(book_code: str, title: str = None):
+#     df = _load_books()
+#     mask = _book_matches(df, book_code)
 
-    if not mask.any():
-        return {"error": "Book not found"}
+#     if not mask.any():
+#         return {"error": "Book not found"}
 
-    if title:
-        df.loc[mask, "Title"] = title
-        df.loc[mask, "date_updated"] = pd.Timestamp.now().strftime("%Y-%m-%d")
+#     if title:
+#         df.loc[mask, "Title"] = title
+#         df.loc[mask, "date_updated"] = pd.Timestamp.now().strftime("%Y-%m-%d")
 
-    df.to_csv(BOOKS_PATH, index=False)
-    return {"message": f"Book {book_code} updated successfully!"}
+#     df.to_csv(BOOKS_PATH, index=False)
+#     return {"message": f"Book {book_code} updated successfully!"}
 
 
 # Soft delete book on books_data
@@ -92,7 +92,7 @@ def delete_book(book_id: int):
 
 
 # # Filter uniforms by type, size, gender
-# @router.get("/filter-uniforms")
+# @router.post("/filter-uniforms")
 # def filter_uniforms():
 #     return {}
 

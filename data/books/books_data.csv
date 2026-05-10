@@ -12,5 +12,5 @@ book_id,subject_code,Title,Price,stock_quantity,semester_available,date_added,da
 11,GE05,Philippine History and Governance,390,40,1,2026-04-15,2026-05-01,All,available,False
 12,GE-ELEC8,Business Communication,450,70,2,2026-01-10,2026-01-15,CBEA,available,False
 13,PE01,PATHFIT 1 Wellness and Fitness,400,30,1,2026-05-05,2026-05-07,All,available,False
-14,SCI101,General Chemistry Laboratory Manual,600,25,1,2026-05-08,2026-05-08,CAS,available,False
-15,MATH201,Advanced Calculus,550,20,2,2026-05-08,2026-05-08,CAS,available,False
+14,SCI101,General Chemistry Laboratory Manual,600,25,1,2026-05-08,2026-05-08,CAS,available,True
+15,MATH201,Advanced Calculus,550,20,2,2026-05-08,2026-05-08,CAS,available,True
