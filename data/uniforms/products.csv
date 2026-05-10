@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 product_id,product_name,price,uniform_type,date_added,date_updated
 TOP-001,New Name,600,Essentials,2023-01-01 00:00:00,2026-05-10 21:20:04
 TOP-002,Women's Top,525,Essentials,2023-01-01 00:00:00,2023-01-01 00:00:00
@@ -7,3 +8,14 @@ PNT-001,Women's Pants,510,Essentials,2023-01-01 00:00:00,2023-01-01 00:00:00
 SHT-001,PE Shirt,355,PE,2023-01-01 00:00:00,2023-01-01 00:00:00
 PNT-002,PE Pants,450,PE,2023-01-01 00:00:00,2023-01-01 00:00:00
 SHT-002,NSTP Shirt,355,NSTP,2023-01-01 00:00:00,2023-01-01 00:00:00
+=======
+product_id,product_name,price,uniform_type,date_added,date_updated,is_deleted
+TOP-001,Men's Top,515,Essentials,2023-01-01 00:00:00,2023-01-01 00:00:00,True
+TOP-002,Women's Top,525,Essentials,2023-01-01 00:00:00,2023-01-01 00:00:00,False
+BOT-001,Men's Bottom,530,Essentials,2023-01-01 00:00:00,2023-01-01 00:00:00,False
+SKT-001,Women's Skirt,425,Essentials,2023-01-01 00:00:00,2023-01-01 00:00:00,False
+PNT-001,Women's Pants,510,Essentials,2023-01-01 00:00:00,2023-01-01 00:00:00,False
+SHT-001,PE Shirt,355,PE,2023-01-01 00:00:00,2023-01-01 00:00:00,False
+PNT-002,PE Pants,450,PE,2023-01-01 00:00:00,2023-01-01 00:00:00,False
+SHT-002,NSTP Shirt,355,NSTP,2023-01-01 00:00:00,2023-01-01 00:00:00,False
+>>>>>>> 021f26342e8ca691a90a85e04d0a8b397937b341

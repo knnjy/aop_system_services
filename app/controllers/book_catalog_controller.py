@@ -82,31 +82,31 @@ def delete_book(book_id: int):
     return {"message": f"Book {book_id} marked as deleted."}
 
 
-### UNIFORM CRUD
+# ### UNIFORM CRUD
 
-# List all unifrom product
-@router.get("/list-uniforms")
-def list_all_uniforms():
-    return {}
+# # List all unifrom product
+# @router.get("/list-uniforms")
+# def list_all_uniforms():
+#     return {}
 
 
-# Filter uniforms by type, size, gender
-@router.get("/filter-uniforms")
-def filter_uniforms():
-    return {}
+# # Filter uniforms by type, size, gender
+# @router.get("/filter-uniforms")
+# def filter_uniforms():
+#     return {}
 
-# Add new uniform
-@router.post("/add-uniform")
-def add_uniform():
-    return {}
+# # Add new uniform
+# @router.post("/add-uniform")
+# def add_uniform():
+#     return {}
 
-# Update uniform by code
-@router.put("/update-uniform/{uniform_code}")
-def update_uniform():
-    return {}
+# # Update uniform by code
+# @router.put("/update-uniform/{uniform_code}")
+# def update_uniform():
+#     return {}
 
-# Soft delete uniform
-@router.delete("/delete-uniform/{uniform_code}")
-def delete_uniform():
-    return {}
+# # Soft delete uniform
+# @router.delete("/delete-uniform/{uniform_code}")
+# def delete_uniform():
+#     return {}
 

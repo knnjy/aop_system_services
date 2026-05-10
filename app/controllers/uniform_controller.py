@@ -2,9 +2,7 @@ from fastapi import APIRouter
 import pandas as pd
 
 router = APIRouter(prefix="/api/uniforms", tags=["Uniforms"])
-
-UNIFORMS_PATH = "data/uniforms/products.csv"
-
+UNIFORMS_PATH = "data/uniforms/uniform_data.csv"
 
 # LIST UNIFORMS
 @router.get("/list-uniforms")
@@ -15,7 +13,6 @@ def list_uniforms():
         df = df[df["is_deleted"] == False]
 
     return df.to_dict(orient="records")
-
 
 # ADD UNIFORM
 @router.post("/add-uniform")
@@ -52,20 +49,24 @@ def update_uniform(uniform_code: str, product_name: str = None, price: float = N
     return {"message": f"Uniform {uniform_code} updated successfully."}
 
 
-# DELETE UNIFORM (soft delete)
-@router.delete("/delete-uniform/{uniform_code}")
-def delete_uniform(uniform_code: str):
-
+@router.delete("/delete-uniform/{product_id}") 
+def delete_uniform(product_id: str):
+    # Load the CSV file
     df = pd.read_csv(UNIFORMS_PATH)
 
-    if uniform_code not in df["product_id"].values:
+    # Ensure 'product_id' column is string for comparison
+    df['product_id'] = df['product_id'].astype(str)
+
+    # Check if product_id exists
+    if str(product_id) not in df['product_id'].values:
         return {"error": "Uniform not found"}
 
-    if "is_deleted" not in df.columns:
-        df["is_deleted"] = False
+    # Soft delete: mark is_deleted = True
+    if 'is_deleted' not in df.columns:
+        df['is_deleted'] = False  # create column if missing
 
-    df.loc[df["product_id"] == uniform_code, "is_deleted"] = True
+    df.loc[df['product_id'] == str(product_id), 'is_deleted'] = True
 
+    # Save changes
     df.to_csv(UNIFORMS_PATH, index=False)
-
-    return {"message": f"Uniform {uniform_code} marked as deleted."}
+    return {"message": f"Uniform {product_id} marked as deleted."}

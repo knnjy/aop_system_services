@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 book_id,subject_code,Title,Price,stock_quantity,semester_available,date_added,date_updated,Program Related,availability,is_deleted
 1,6631,Micobook,375,232,1,2026-05-08,2026-05-08,ICS,available,True
 2,1111,ELECTRICAL CIRCUITS 1 LABORATORY MANUAL,308,56,1,2026-05-08,2026-05-08,CEA,available,False
@@ -14,3 +15,21 @@ book_id,subject_code,Title,Price,stock_quantity,semester_available,date_added,da
 13,PE01,PATHFIT 1 Wellness and Fitness,400,30,1,2026-05-05,2026-05-07,All,available,False
 14,SCI101,General Chemistry Laboratory Manual,600,25,1,2026-05-08,2026-05-08,CAS,available,False
 15,MATH201,Advanced Calculus,550,20,2,2026-05-08,2026-05-08,CAS,available,False
+=======
+book_id,subject_code,Title,Price,stock_quantity,semester_available,date_added,date_updated,Program Related,availability
+1,6631,Productivity and Quality Management Second Edition,375,232,1,2026-05-08,2026-05-08,BSOM,available
+2,1111,ELECTRICAL CIRCUITS 1 LABORATORY MANUAL,308,56,1,2026-05-08,2026-05-08,CEA,available
+3,GE04,The Life and Works of Jose Rizal,400,21,1,2026-04-09,2026-05-01,All,available
+4,PE02,"PATHFIT 2 EXERCISE-BASED FITNESS ACTIVITIES: Building Strength, Endurance",420,0,2,2026-05-05,2026-05-07,All,unavailable
+5,PE04,PATHFIT 4 THE POWER OF PLAY: Building Fitness Through Sports,420,21,2,2026-01-02,2026-01-02,All,available
+6,GE-ELEC7,Entrepreneurial Mindset,525,175,2,2026-01-08,2026-01-08,CBEA,available
+7,GE08,Introduction to Ethics,375,21,2,2026-01-02,2026-01-03,CAS,available
+8,GE-ELEC6,Environmental Science (A Simplified Approach for College Students),610,54,2,2026-01-02,2026-01-03,CAS,available
+9,ITC210,Data Structures and Algorithms,480,60,1,2026-05-08,2026-05-08,ICS,available
+10,ITC330,Operating Systems Concepts,520,45,2,2026-05-08,2026-05-08,ICS,available
+11,GE05,Philippine History and Governance,390,40,1,2026-04-15,2026-05-01,All,available
+12,GE-ELEC8,Business Communication,450,70,2,2026-01-10,2026-01-15,CBEA,available
+13,PE01,PATHFIT 1 Wellness and Fitness,400,30,1,2026-05-05,2026-05-07,All,available
+14,SCI101,General Chemistry Laboratory Manual,600,25,1,2026-05-08,2026-05-08,CAS,available
+15,MATH201,Advanced Calculus,550,20,2,2026-05-08,2026-05-08,CAS,available
+>>>>>>> 021f26342e8ca691a90a85e04d0a8b397937b341

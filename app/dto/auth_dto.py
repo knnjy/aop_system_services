@@ -12,4 +12,4 @@ class LoginResponse(BaseModel):
     account_id: int
     username: str
     role: str
-    student_profile: Dict[str, Any]
+    user_data: Dict[str, Any]
