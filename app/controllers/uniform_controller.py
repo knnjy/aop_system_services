@@ -2,41 +2,18 @@ from fastapi import APIRouter
 import pandas as pd
 
 router = APIRouter(prefix="/api/uniforms", tags=["Uniforms"])
+UNIFORMS_PATH = "data/uniforms/uniform_data.csv"
 
-UNIFORMS_PATH = "data/uniforms/products.csv"
-
-
-# LIST UNIFORMS
-@router.get("/list-uniforms")
-def list_uniforms():
+@router.delete("/delete-uniform/{product_id}")
+def delete_uniform(product_id: str):
     df = pd.read_csv(UNIFORMS_PATH)
 
-    if "is_deleted" in df.columns:
-        df = df[df["is_deleted"] == False]
-
-    return df.to_dict(orient="records")
-
-
-# ADD UNIFORM
-@router.post("/add-uniform")
-def add_uniform():
-    return {"message": "Add uniform endpoint (to be implemented)"}
-
-
-# DELETE UNIFORM (soft delete)
-@router.delete("/delete-uniform/{uniform_code}")
-def delete_uniform(uniform_code: str):
-
-    df = pd.read_csv(UNIFORMS_PATH)
-
-    if uniform_code not in df["product_id"].values:
+    if product_id not in df['product_id'].astype(str).values:
         return {"error": "Uniform not found"}
 
     if "is_deleted" not in df.columns:
         df["is_deleted"] = False
 
-    df.loc[df["product_id"] == uniform_code, "is_deleted"] = True
-
+    df.loc[df['product_id'] == product_id, 'is_deleted'] = True
     df.to_csv(UNIFORMS_PATH, index=False)
-
-    return {"message": f"Uniform {uniform_code} marked as deleted."}
+    return {"message": f"Uniform {product_id} marked as deleted."}
