@@ -50,7 +50,6 @@ def clean_size_data(size_row: pd.Series) -> Dict[str, Any]:
     for col in MEASUREMENT_COLUMNS:
         if col in size_row.index:
             value = size_row[col]
-            # Check if value is not null, not NaN, and not empty string
             if pd.notna(value) and str(value).strip() != "":
                 cleaned[col] = value
     return cleaned
@@ -181,7 +180,6 @@ def update_uniform(
         sizes_df = safe_read_csv(SIZES_PATH)
         sizes_df.columns = sizes_df.columns.str.strip()
 
-        # Filter by both product_id and Size
         size_mask = (sizes_df["product_id"].astype(str).str.strip() == uniform_code.strip()) & \
                     (sizes_df["Size"].astype(str).str.strip() == size.strip())
 
@@ -201,30 +199,9 @@ def update_uniform(
 
             sizes_df.to_csv(SIZES_PATH, index=False)
 
-    # Build response payload with relevant measurement columns only
-    sizes_df = safe_read_csv(SIZES_PATH)
-    sizes_df.columns = sizes_df.columns.str.strip()
-
-    product_sizes = sizes_df[
-        sizes_df["product_id"].astype(str).str.strip() == uniform_code.strip()
-    ].copy()
-
-    if not product_sizes.empty:
-        # Normalize blank strings to NaN so dropna will remove empty measurement columns
-        product_sizes.replace({"": pd.NA}, inplace=True)
-        product_sizes = product_sizes.dropna(axis=1, how="all")
-        sizes = product_sizes.to_dict(orient="records")
-    else:
-        sizes = []
-
-    product_row = df.loc[mask].iloc[0].to_dict()
     return {
         "success": True,
-        "message": f"Uniform {uniform_code} updated successfully.",
-        "data": {
-            "product": product_row,
-            "sizes": sizes
-        }
+        "message": f"Uniform {uniform_code} updated successfully."
     }
 
 
