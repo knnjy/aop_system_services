@@ -24,7 +24,8 @@ def _book_matches(df, book_code: str):
 def list_books():
     df = _load_books()
     df = df[df["is_deleted"] == False]
-    return df.to_dict(orient="records")
+    columns = ["book_id", "subject_code", "Title", "Price", "stock_quantity", "semester_available", "date_added", "date_updated", "Program Related", "availability"]
+    return df[columns].to_dict(orient="records")
 
 
 # Filter book by Program_related, Title, & semester available
@@ -42,7 +43,8 @@ def filter_books(program_related: str = None, title: str = None, semester_availa
     if semester_available is not None:
         df = df[df["semester_available"] == semester_available]
 
-    return df.to_dict(orient="records")
+    columns = ["book_id", "subject_code", "Title", "Price", "stock_quantity", "semester_available", "date_added", "date_updated", "Program Related", "availability"]
+    return df[columns].to_dict(orient="records")
 
 
 # Add new book data on books_data
