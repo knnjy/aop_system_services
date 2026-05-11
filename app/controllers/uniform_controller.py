@@ -150,51 +150,82 @@ def update_uniform(
     bottom_width: Union[float, str] = None
 ):
     # Update products.csv
-    df = pd.read_csv(UNIFORMS_PATH, index_col=False)
+    df = safe_read_csv(UNIFORMS_PATH)
 
-    if uniform_code not in df["product_id"].values:
+    mask = df["product_id"].astype(str).str.strip() == uniform_code.strip()
+    if not mask.any():
         return {"error": "Uniform not found"}
 
+    # Auto-restore soft-deleted uniforms
+    if "is_deleted" in df.columns:
+        deleted_mask = mask & df["is_deleted"].isin([True, "True", "true", 1, "1"])
+        if deleted_mask.any():
+            df.loc[deleted_mask, "is_deleted"] = False
+
     if product_name is not None:
-        df.loc[df["product_id"] == uniform_code, "product_name"] = product_name
+        df.loc[mask, "product_name"] = product_name
 
     if price is not None:
-        df.loc[df["product_id"] == uniform_code, "price"] = price
+        df.loc[mask, "price"] = price
 
     if uniform_type is not None:
-        df.loc[df["product_id"] == uniform_code, "uniform_type"] = uniform_type
+        df.loc[mask, "uniform_type"] = uniform_type
 
-    df.loc[df["product_id"] == uniform_code, "date_updated"] = \
-        pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
+    if "date_updated" in df.columns:
+        df.loc[mask, "date_updated"] = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
 
     df.to_csv(UNIFORMS_PATH, index=False)
 
     # Update product_sizes.csv if size-related parameters are provided
     if size is not None and any(param is not None for param in [length, waistline, bust_chest, hips, shoulder, bottom_width]):
-        sizes_df = pd.read_csv(SIZES_PATH, index_col=False)
+        sizes_df = safe_read_csv(SIZES_PATH)
         sizes_df.columns = sizes_df.columns.str.strip()
 
         # Filter by both product_id and Size
-        mask = (sizes_df["product_id"].astype(str).str.strip() == uniform_code.strip()) & \
-               (sizes_df["Size"].astype(str).str.strip() == size.strip())
+        size_mask = (sizes_df["product_id"].astype(str).str.strip() == uniform_code.strip()) & \
+                    (sizes_df["Size"].astype(str).str.strip() == size.strip())
 
-        if mask.any():
+        if size_mask.any():
             if length is not None:
-                sizes_df.loc[mask, "Length"] = length
+                sizes_df.loc[size_mask, "Length"] = length
             if waistline is not None:
-                sizes_df.loc[mask, "Waistline"] = waistline
+                sizes_df.loc[size_mask, "Waistline"] = waistline
             if bust_chest is not None:
-                sizes_df.loc[mask, "Bust/Chest"] = bust_chest
+                sizes_df.loc[size_mask, "Bust/Chest"] = bust_chest
             if hips is not None:
-                sizes_df.loc[mask, "Hips"] = hips
+                sizes_df.loc[size_mask, "Hips"] = hips
             if shoulder is not None:
-                sizes_df.loc[mask, "Shoulder"] = shoulder
+                sizes_df.loc[size_mask, "Shoulder"] = shoulder
             if bottom_width is not None:
-                sizes_df.loc[mask, "Bottom Width"] = bottom_width
+                sizes_df.loc[size_mask, "Bottom Width"] = bottom_width
 
             sizes_df.to_csv(SIZES_PATH, index=False)
 
-    return {"success": True, "message": f"Uniform {uniform_code} updated successfully."}
+    # Build response payload with relevant measurement columns only
+    sizes_df = safe_read_csv(SIZES_PATH)
+    sizes_df.columns = sizes_df.columns.str.strip()
+
+    product_sizes = sizes_df[
+        sizes_df["product_id"].astype(str).str.strip() == uniform_code.strip()
+    ].copy()
+
+    if not product_sizes.empty:
+        # Normalize blank strings to NaN so dropna will remove empty measurement columns
+        product_sizes.replace({"": pd.NA}, inplace=True)
+        product_sizes = product_sizes.dropna(axis=1, how="all")
+        sizes = product_sizes.to_dict(orient="records")
+    else:
+        sizes = []
+
+    product_row = df.loc[mask].iloc[0].to_dict()
+    return {
+        "success": True,
+        "message": f"Uniform {uniform_code} updated successfully.",
+        "data": {
+            "product": product_row,
+            "sizes": sizes
+        }
+    }
 
 
 # DELETE (SOFT DELETE) UNIFORM
