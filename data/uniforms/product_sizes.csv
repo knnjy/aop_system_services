@@ -1,11 +1,11 @@
 product_id,Size,Length,Waistline,Bust/Chest,Hips,Shoulder,Bottom Width
-TOP-001,Small,30,,35,,,
+TOP-001,Small,32,,44,,,
 TOP-001,Medium,27,,29.0,,,
 TOP-001,Large,28,,30.0,,,
 TOP-001,XL,29,,31.0,,,
 TOP-001,2XL,30,,32.0,,,
 TOP-001,3XL,31,,33.0,,,
-TOP-002,Medium,24,,36.0,34.0,,15.0
+TOP-002,Medium,26,32,28.0,12.0,,14.0
 TOP-002,Small,22.0,,34.0,32.0,,14.0
 TOP-002,Large,26,,38.0,36.0,,16.0
 TOP-002,XL,27,,40.0,38.0,,17.0

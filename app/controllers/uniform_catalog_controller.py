@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException
 import pandas as pd
+from pathlib import Path
 from pydantic import BaseModel
 from typing import Union, Optional, Dict, Any, List
 import os
@@ -8,8 +9,9 @@ from app.utils.csv_loader import load_csv
 
 router = APIRouter(prefix="/api/uniforms", tags=["Uniforms"])
 
-UNIFORMS_PATH = "data/uniforms/products.csv"
-SIZES_PATH = "data/uniforms/product_sizes.csv"
+DATA_DIR = Path(__file__).resolve().parent.parent.parent / "data"
+UNIFORMS_PATH = DATA_DIR / "uniforms" / "products.csv"
+SIZES_PATH = DATA_DIR / "uniforms" / "product_sizes.csv"
 
 # Measurement column names
 MEASUREMENT_COLUMNS = ["Length", "Waistline", "Bust/Chest", "Hips", "Shoulder", "Bottom Width"]
@@ -181,10 +183,18 @@ def update_uniform(
     if "date_updated" in df.columns:
         df.loc[mask, "date_updated"] = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    df.to_csv(UNIFORMS_PATH, index=False)
+    safe_write_csv(df, UNIFORMS_PATH)
 
     # Update product_sizes.csv if size-related parameters are provided
-    if size is not None and any(param is not None for param in [length, waistline, bust_chest, hips, shoulder, bottom_width]):
+    size_updates = {
+        "Length": length,
+        "Waistline": waistline,
+        "Bust/Chest": bust_chest,
+        "Hips": hips,
+        "Shoulder": shoulder,
+        "Bottom Width": bottom_width
+    }
+    if size is not None and any(v is not None for v in size_updates.values()):
         sizes_df = safe_read_csv(SIZES_PATH)
         sizes_df.columns = sizes_df.columns.str.strip()
 
@@ -192,20 +202,11 @@ def update_uniform(
                     (sizes_df["Size"].astype(str).str.strip() == size.strip())
 
         if size_mask.any():
-            if length is not None:
-                sizes_df.loc[size_mask, "Length"] = length
-            if waistline is not None:
-                sizes_df.loc[size_mask, "Waistline"] = waistline
-            if bust_chest is not None:
-                sizes_df.loc[size_mask, "Bust/Chest"] = bust_chest
-            if hips is not None:
-                sizes_df.loc[size_mask, "Hips"] = hips
-            if shoulder is not None:
-                sizes_df.loc[size_mask, "Shoulder"] = shoulder
-            if bottom_width is not None:
-                sizes_df.loc[size_mask, "Bottom Width"] = bottom_width
+            for column, value in size_updates.items():
+                if value is not None:
+                    sizes_df.loc[size_mask, column] = value
 
-            sizes_df.to_csv(SIZES_PATH, index=False)
+            safe_write_csv(sizes_df, SIZES_PATH)  # ✅ outside all if blocks
 
     return {
         "success": True,
@@ -232,7 +233,6 @@ def list_rtu_uniforms(
     df = _load_rtu_uniforms()
     sizes_df = load_csv("uniforms/product_sizes.csv")
 
-    # Normalize product IDs and add gender mapping
     df["product_id"] = df["product_id"].astype(str).str.strip()
     sizes_df["product_id"] = sizes_df["product_id"].astype(str).str.strip()
 
@@ -248,10 +248,8 @@ def list_rtu_uniforms(
     }
     df['Gender'] = df['product_id'].map(gender_mapping)
 
-    # Exclude deleted rows
     df = df[df['is_deleted'].isin([False, 'False', 'false', 0, '0'])]
 
-    # Apply filters only if parameters are provided
     if uniform_type:
         cleaned_uniform_type = uniform_type.strip().lower()
         df = df[df['uniform_type'].astype(str).str.strip().str.lower() == cleaned_uniform_type]
@@ -274,7 +272,6 @@ def list_rtu_uniforms(
         ]['product_id'].unique()
         df = df[df['product_id'].isin(matching_ids)]
 
-    # Build nested size records per product
     result = []
     for _, product in df.iterrows():
         pid = product['product_id']
