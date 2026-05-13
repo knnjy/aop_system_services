@@ -1,0 +1,5 @@
+order_item_id,uniform_order_id,uniform_size_id,quantity,unit_price,subtotal
+OU001,UOF001,US001,1,300.00,300.00
+OU002,UOF001,US002,2,300.00,600.00
+OU003,UOF002,US003,2,300.00,600.00
+    

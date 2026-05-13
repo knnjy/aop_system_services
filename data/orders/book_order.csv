@@ -1,0 +1,3 @@
+book_order_id,user_id,total_amount,order_items,requested_at,status,date_created,approved_by
+BOF001,U001,750.00,2,2026-05-13 10:00,pending,2026-05-13,null
+BOF002,U002,450.00,1,2026-05-13 11:30,approved,2026-05-13,ADM002

@@ -1,0 +1,4 @@
+order_item_id,book_order_id,book_id,quantity,unit_price,subtotal
+OB001,BOF001,BK001,1,350.00,350.00
+OB002,BOF001,BK002,1,400.00,400.00
+OB003,BOF002,BK003,1,450.00,450.00

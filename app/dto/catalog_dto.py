@@ -6,6 +6,7 @@ from datetime import datetime
 @dataclass
 class SizeDTO:
     """Data Transfer Object for uniform sizes"""
+    uniform_size_id: str
     product_id: str
     size: str
     length: Optional[float] = None
@@ -14,6 +15,7 @@ class SizeDTO:
     hips: Optional[float] = None
     shoulder: Optional[float] = None
     bottom_width: Optional[float] = None
+    product_stock: Optional[int] = None
 
 
 @dataclass

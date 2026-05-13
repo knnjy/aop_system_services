@@ -53,14 +53,16 @@ class UniformDAO:
         sizes = []
         for _, size_row in sizes_df.iterrows():
             size_dto = SizeDTO(
+                uniform_size_id=size_row["uniform_size_id"],
                 product_id=size_row["product_id"],
-                size=size_row["Size"],
-                length=size_row["Length"] if pd.notna(size_row["Length"]) else None,
-                waistline=size_row["Waistline"] if pd.notna(size_row["Waistline"]) else None,
-                bust_chest=size_row["Bust/Chest"] if pd.notna(size_row["Bust/Chest"]) else None,
-                hips=size_row["Hips"] if pd.notna(size_row["Hips"]) else None,
-                shoulder=size_row["Shoulder"] if pd.notna(size_row["Shoulder"]) else None,
-                bottom_width=size_row["Bottom Width"] if pd.notna(size_row["Bottom Width"]) else None,
+                size=size_row["size"],
+                length=size_row["length"] if pd.notna(size_row["length"]) else None,
+                waistline=size_row["waistline"] if pd.notna(size_row["waistline"]) else None,
+                bust_chest=size_row["bust_chest"] if pd.notna(size_row["bust_chest"]) else None,
+                hips=size_row["hips"] if pd.notna(size_row["hips"]) else None,
+                shoulder=size_row["shoulder"] if pd.notna(size_row["shoulder"]) else None,
+                bottom_width=size_row["bottom_width"] if pd.notna(size_row["bottom_width"]) else None,
+                product_stock=int(size_row["product_stock"]) if pd.notna(size_row["product_stock"]) else None,
             )
             sizes.append(size_dto)
 
