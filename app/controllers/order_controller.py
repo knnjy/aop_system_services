@@ -1,3 +1,4 @@
+from app.dto.order_dto import OrderRequest
 from app.services.order_service import OrderService
 from fastapi import APIRouter
 
@@ -9,7 +10,6 @@ _order_service = OrderService()
 def home():
     return {"message": "Order Management API Working"}
 
-
 @router.post("/add-order")
-def create_order():
-    return {}
+def create_order(order_form: OrderRequest):
+    return _order_service.add_new_order(order_form)
