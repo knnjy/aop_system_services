@@ -6,14 +6,6 @@ import os
 
 from app.utils.csv_loader import load_csv
 
-
-class Uniform(BaseModel):
-    product_id: str
-    product_name: str
-    price: float
-    uniform_type: str
-
-
 router = APIRouter(prefix="/api/uniforms", tags=["Uniforms"])
 
 UNIFORMS_PATH = "data/uniforms/products.csv"
@@ -107,6 +99,12 @@ def list_uniforms():
 
     return result
 
+class Uniform(BaseModel):
+    product_id: str
+    product_name: str
+    price: float
+    uniform_type: str
+    size: List[dict[str, Any]]
 
 # ADD UNIFORM
 @router.post("/add-uniform")
@@ -138,7 +136,6 @@ def add_uniform(uniform: Uniform):
     df.to_csv("data/uniforms/products.csv", index=False)
 
     return {
-        "success": True,
         "message": "Uniform added successfully",
         "data": new_data
     }
@@ -226,7 +223,7 @@ def _load_rtu_uniforms() -> pd.DataFrame:
     return df
 
 
-@router.get("/rtu-uniforms-filtering")
+@router.get("/filter-uniform")
 def list_rtu_uniforms(
     size: str = None,
     gender: str = None,

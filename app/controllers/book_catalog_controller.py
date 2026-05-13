@@ -1,5 +1,7 @@
 from fastapi import APIRouter
 import pandas as pd
+from datetime import datetime
+from pydantic import BaseModel
 
 router = APIRouter(prefix="/api/books")
 BOOKS_PATH = "data/books/books_data.csv"
@@ -47,29 +49,6 @@ def filter_books(program_related: str = None, title: str = None, semester_availa
     return df[columns].to_dict(orient="records")
 
 
-# Add new book data on books_data
-# @router.post("/add-book")
-# def add_book():
-#     return {}
-
-
-# # Update book data on books_data
-# @router.put("/update-book/{book_code}")
-# def update_book(book_code: str, title: str = None):
-#     df = _load_books()
-#     mask = _book_matches(df, book_code)
-
-#     if not mask.any():
-#         return {"error": "Book not found"}
-
-#     if title:
-#         df.loc[mask, "Title"] = title
-#         df.loc[mask, "date_updated"] = pd.Timestamp.now().strftime("%Y-%m-%d")
-
-#     df.to_csv(BOOKS_PATH, index=False)
-#     return {"message": f"Book {book_code} updated successfully!"}
-
-
 # Soft delete book on books_data
 @router.delete("/delete-book/{book_id}")
 def delete_book(book_id: int):
@@ -85,31 +64,65 @@ def delete_book(book_id: int):
 
     return {"message": f"Book {book_id} marked as deleted."}
 
-# ### UNIFORM CRUD
-
-# # List all unifrom product
-# @router.get("/list-uniforms")
-# def list_all_uniforms():
-#     return {}
 
 
-# # Filter uniforms by type, size, gender
-# @router.post("/filter-uniforms")
-# def filter_uniforms():
-#     return {}
+@router.put("/update-book/{book_id}")
+def update_book(book_id: str, updated_data: dict):
+    # Load the CSV file fresh on every request (for real-time updates)
+    df = pd.read_csv(BOOKS_PATH)
 
-# # Add new uniform
-# @router.post("/add-uniform")
-# def add_uniform():
-#     return {}
+    # Ensure book_id is treated as string for comparison
+    df['book_id'] = df['book_id'].astype(str)
 
-# # Update uniform by code
-# @router.put("/update-uniform/{uniform_code}")
-# def update_uniform():
-#     return {}
+    # Check if the book exists in the dataset
+    if str(book_id) not in df['book_id'].values:
+        return {"error": "Book not found"}
 
-# # Soft delete uniform
-# @router.delete("/delete-uniform/{uniform_code}")
-# def delete_uniform():
-#     return {}
+    # Apply updates to all columns except book_id
+    for column, value in updated_data.items():
+        if column in df.columns and column != "book_id":
+            df.loc[df['book_id'] == str(book_id), column] = value
 
+    # Automatically update the date_update column with current datetime
+    if "date_update" in df.columns:
+        df.loc[df['book_id'] == str(book_id), "date_update"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    # Save changes back to the CSV file
+    df.to_csv(BOOKS_PATH, index=False)
+
+    # Return success message
+    return {"message": f"Book {book_id} updated successfully!"}
+
+@router.get("/list-books", summary="List all books")
+def list_books():
+    df = pd.read_csv(BOOKS_PATH)
+    books = df.to_dict(orient="records")
+    return books
+
+
+class Book(BaseModel):
+    title: str
+    author: str
+    year: str
+
+@router.post("/add-book")
+async def add_book(book: Book):
+    df = pd.read_csv(BOOKS_PATH)
+
+    new_id = str(max(df["book_id"], default=0) + 1)
+    new_row = {
+        "book_id": new_id,
+        "title": book.title,
+        "author": book.author,
+        "year": book.year,
+        "is_deleted": False
+    }
+
+    df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
+    df.to_csv(BOOKS_PATH, index=False)
+
+    return {
+        "success": True,
+        "message": "Book added successfully",
+        "book": new_row
+    }
