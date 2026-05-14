@@ -1,10 +1,10 @@
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel, field_validator
 
 class OrderItem(BaseModel):
-    order_item_id: int
+    order_item_id: str
     request_id: str
     product_id: str
     quantity: int
@@ -18,11 +18,11 @@ class OrderRequest(BaseModel):
     order_items: List[OrderItem]
     status: str
     date_created: datetime
-    approved_by: str = None
+    approved_by: Optional[str] = None
     
-    @field_validator("user_id")
-    @classmethod
-    def check_id(cls, user_id: str):
+    # @field_validator("user_id")
+    # @classmethod
+    # def check_id(cls, user_id: str):
         
-        return{}
+    #     return{}
 

@@ -1,8 +1,115 @@
+import csv
+from datetime import datetime
+import pandas as pd
+from typing import Optional
 
-
+from app.controllers.uniform_catalog_controller import DATA_DIR
+from app.dto.order_dto import OrderItem, OrderRequest
 from app.utils.csv_loader import load_csv
-
 
 class OrderDAO:
     def __init__(self) -> None:
-        self._orders = load_csv("")
+        # These are DataFrames
+        self._book_orders = load_csv("orders/book_order.csv")
+        self._book_orders_item = load_csv("orders/book_order_item.csv")
+        self._uniform_orders = load_csv("orders/uniform_order.csv")
+        self._uniform_orders_item = load_csv("orders/uniform_order_item.csv")
+
+    def get_order(self, request_id: str) -> Optional[OrderRequest]:
+        if request_id.startswith("BOF"):
+            orders_df = self._book_orders
+            items_df = self._book_orders_item
+            id_field = "book_order_id"
+            product_field = "book_id"
+        elif request_id.startswith("UOF"):
+            orders_df = self._uniform_orders
+            items_df = self._uniform_orders_item
+            id_field = "uniform_order_id"
+            product_field = "uniform_size_id"
+        else:
+            return None
+
+        # Find order row
+        order_rows = orders_df.loc[orders_df[id_field] == request_id].to_dict("records")
+        if not order_rows:
+            return None
+        order_row = order_rows[0]
+
+        # Build OrderItems
+        item_rows = items_df.loc[items_df[id_field] == request_id].to_dict("records")
+        order_items = [
+            OrderItem(
+                order_item_id=item["order_item_id"],
+                request_id=request_id,
+                product_id=item[product_field],
+                quantity=int(item["quantity"]),
+                unit_price=float(item["unit_price"]),
+                subtotal=float(item["subtotal"])
+            )
+            for item in item_rows
+        ]
+
+        return OrderRequest(
+            request_id=request_id,
+            user_id=order_row["user_id"],
+            total_amount=float(order_row["total_amount"]),
+            order_items=order_items,
+            status=order_row["status"],
+            date_created=datetime.strptime(order_row["date_created"], "%Y-%m-%d"),
+            approved_by=order_row.get("approved_by") or None
+        )
+          
+    def save_order(self, order: OrderRequest):
+        if order.request_id.startswith("BOF"):
+            order_file = DATA_DIR / "orders/book_order.csv"
+            item_file = DATA_DIR / "orders/book_order_item.csv"
+            id_field = "book_order_id"
+            product_field = "book_id"
+        elif order.request_id.startswith("UOF"):
+            order_file = DATA_DIR / "orders/uniform_order.csv"
+            item_file = DATA_DIR / "orders/uniform_order_item.csv"
+            id_field = "uniform_order_id"
+            product_field = "uniform_size_id"
+        else:
+            raise ValueError("Unknown order type")
+
+        # Ensure directories exist
+        order_file.parent.mkdir(parents=True, exist_ok=True)
+        item_file.parent.mkdir(parents=True, exist_ok=True)
+
+        # Append order row
+        order_row = {
+            id_field: order.request_id,
+            "user_id": order.user_id,
+            "total_amount": order.total_amount,
+            "order_items": len(order.order_items),
+            "requested_at": order.date_created.isoformat(timespec="minutes"),
+            "status": order.status,
+            "date_created": order.date_created.strftime("%Y-%m-%d"),
+            "approved_by": order.approved_by or ""
+        }
+        pd.DataFrame([order_row]).to_csv(order_file, mode="a", header=not order_file.exists(), index=False)
+
+        # Append item rows
+        item_rows = [
+            {
+                "order_item_id": item.order_item_id,
+                id_field: order.request_id,
+                product_field: item.product_id,
+                "quantity": item.quantity,
+                "unit_price": item.unit_price,
+                "subtotal": item.subtotal
+            }
+            for item in order.order_items
+        ]
+        pd.DataFrame(item_rows).to_csv(item_file, mode="a", header=not item_file.exists(), index=False)
+        
+        # Refresh in-memory DataFrames so get_order sees new data
+        if order.request_id.startswith("BOF"):
+            self._book_orders = load_csv("orders/book_order.csv")
+            self._book_orders_item = load_csv("orders/book_order_item.csv")
+        else:
+            self._uniform_orders = load_csv("orders/uniform_order.csv")
+            self._uniform_orders_item = load_csv("orders/uniform_order_item.csv")
+
+        return {"message": "Order saved successfully", "order_id": order.request_id}
