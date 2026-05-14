@@ -3,6 +3,7 @@ from datetime import datetime
 
 from app.dao.uniform_dao import UniformDAO
 from app.dto.catalog_dto import UniformDTO, SizeDTO
+from app.utils.uniform_utils import get_size_abbreviation, extract_prefix
 
 
 class UniformService:
@@ -14,7 +15,7 @@ class UniformService:
         # Auto-generate product_id if not provided
         if not uniform.product_id:
             # Extract prefix from product_name or uniform_type
-            prefix = self._extract_prefix(uniform.product_name or uniform.uniform_type)
+            prefix = extract_prefix(uniform.product_name or uniform.uniform_type)
             uniform.product_id = self._uniform_dao.get_next_product_id(prefix)
         else:
             # Check if product_id already exists
@@ -38,7 +39,7 @@ class UniformService:
                 if isinstance(size_data, dict):
                     # Extract size abbreviation
                     size_str = size_data.get('size', 'S')
-                    size_abbrev = self._get_size_abbreviation(size_str)
+                    size_abbrev = get_size_abbreviation(size_str)
                     
                     # Generate uniform_size_id
                     size_id = f"{uniform.product_id}-{size_abbrev}"
@@ -59,7 +60,7 @@ class UniformService:
                 elif isinstance(size_data, SizeDTO):
                     # Generate the ID if not already set
                     if not size_data.uniform_size_id or not size_data.product_id:
-                        size_abbrev = self._get_size_abbreviation(size_data.size)
+                        size_abbrev = get_size_abbreviation(size_data.size)
                         size_data.uniform_size_id = f"{uniform.product_id}-{size_abbrev}"
                         size_data.product_id = uniform.product_id
                     size_dtos.append(size_data)
@@ -74,23 +75,6 @@ class UniformService:
             "uniform_type": saved_uniform.uniform_type,
             "sizes_added": len(size_dtos)
         }
-    
-    def _get_size_abbreviation(self, size: str) -> str:
-        """Convert size name to abbreviation"""
-        size_map = {
-            "Small": "S",
-            "Medium": "M", 
-            "Large": "L",
-            "XL": "XL",
-            "2XL": "2XL",
-            "3XL": "3XL",
-        }
-        return size_map.get(size, size.upper()[:3])
 
-    def _extract_prefix(self, name: str) -> str:
-        """Extract prefix from product name or uniform type"""
-        if not name:
-            return "PRD"
-        # Get first 3 letters and convert to uppercase
-        prefix = name.replace(" ", "")[:3].upper()
-        return prefix if len(prefix) == 3 else (prefix + "D")[:3]
+
+
