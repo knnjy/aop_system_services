@@ -11,7 +11,6 @@ class BookService:
         self._book_dao = BookDAO()
 
     def add_new_book(self, order_form: BookDTO):
-        
         # Auto-generate book_id if not provided
         if not order_form.book_id:
             order_form.book_id = self._book_dao.get_next_book_id()

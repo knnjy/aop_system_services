@@ -1,3 +1,5 @@
+from app.dto.catalog_dto import UniformDTO
+from app.services.uniform_service import UniformService
 from fastapi import APIRouter, HTTPException
 import pandas as pd
 from pathlib import Path
@@ -6,7 +8,7 @@ from typing import Union, Optional, Dict, Any, List
 import os
 
 from app.utils.csv_loader import load_csv
-
+from app.services.uniform_service import UniformService
 router = APIRouter(prefix="/api/uniforms", tags=["Uniforms"])
 
 DATA_DIR = Path(__file__).resolve().parent.parent.parent / "data"
@@ -15,6 +17,9 @@ SIZES_PATH = DATA_DIR / "uniforms" / "product_sizes.csv"
 
 # Measurement column names
 MEASUREMENT_COLUMNS = ["Length", "Waistline", "Bust/Chest", "Hips", "Shoulder", "Bottom Width"]
+
+
+_uniform_service = UniformService()
 
 
 def safe_read_csv(file_path: str) -> pd.DataFrame:
@@ -101,46 +106,11 @@ def list_uniforms():
 
     return result
 
-class Uniform(BaseModel):
-    product_id: str
-    product_name: str
-    price: float
-    uniform_type: str
-    size: List[dict[str, Any]]
 
 # ADD UNIFORM
 @router.post("/add-uniform")
-def add_uniform(uniform: Uniform):
-    try:
-        df = pd.read_csv("data/uniforms/products.csv")
-    except Exception:
-        df = pd.DataFrame(columns=[
-            "product_id",
-            "product_name",
-            "price",
-            "uniform_type",
-            "date_added",
-            "date_updated",
-            "is_deleted"
-        ])
-
-    new_data = {
-        "product_id": uniform.product_id,
-        "product_name": uniform.product_name,
-        "price": uniform.price,
-        "uniform_type": uniform.uniform_type,
-        "date_added": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "date_updated": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "is_deleted": False
-    }
-
-    df = pd.concat([df, pd.DataFrame([new_data])], ignore_index=True)
-    df.to_csv("data/uniforms/products.csv", index=False)
-
-    return {
-        "message": "Uniform added successfully",
-        "data": new_data
-    }
+def create_uniform(unfiorm: UniformDTO):
+    return _uniform_service.create_new_uniform(unfiorm)
 
 
 # UPDATE UNIFORM

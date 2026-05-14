@@ -6,6 +6,9 @@ from datetime import datetime
 from pydantic import BaseModel
 
 router = APIRouter(prefix="/api/books")
+
+_book_service = BookService()
+
 BOOKS_PATH = "data/books/books_data.csv"
 
 
@@ -101,7 +104,7 @@ def list_books():
     books = df.to_dict(orient="records")
     return books
 
-_book_service = BookService()
+
 
 @router.post("/add-book")
 def add_book(book: BookDTO):

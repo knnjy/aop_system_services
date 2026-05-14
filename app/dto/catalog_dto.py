@@ -6,9 +6,9 @@ from datetime import datetime
 @dataclass
 class SizeDTO:
     """Data Transfer Object for uniform sizes"""
-    uniform_size_id: str
-    product_id: str
-    size: str
+    uniform_size_id: Optional[str] = None
+    product_id: Optional[str] = None
+    size: str = ""
     length: Optional[float] = None
     waistline: Optional[float] = None
     bust_chest: Optional[float] = None
@@ -21,13 +21,13 @@ class SizeDTO:
 @dataclass
 class UniformDTO:
     """Data Transfer Object for uniforms"""
-    product_id: str
-    product_name: str
-    price: float
-    uniform_type: str
-    date_added: datetime
-    date_updated: datetime
-    is_deleted: bool
+    product_id: Optional[str] = None
+    product_name: str = ""
+    price: float = 0.0
+    uniform_type: str = ""
+    date_added: Optional[datetime] = None
+    date_updated: Optional[datetime] = None
+    is_deleted: bool = False
     sizes: Optional[List[SizeDTO]] = None
 
 

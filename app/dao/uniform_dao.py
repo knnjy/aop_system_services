@@ -1,8 +1,9 @@
 from typing import Any, Dict, List, Optional
+from pathlib import Path
 
 import pandas as pd
 
-from app.utils.csv_loader import load_csv
+from app.utils.csv_loader import load_csv, DATA_DIR
 from app.dto.catalog_dto import UniformDTO, SizeDTO
 
 
@@ -43,6 +44,68 @@ class UniformDAO:
             uniform = self._build_uniform_dto(row)
             uniforms.append(uniform)
         return uniforms
+
+    def get_next_product_id(self, prefix: str) -> str:
+        """Generate the next product_id by incrementing from the last one with same prefix"""
+        if self._products.empty:
+            return f"{prefix}-001"
+        
+        # Filter products with same prefix
+        matching = self._products[self._products["product_id"].str.startswith(prefix)]
+        if matching.empty:
+            return f"{prefix}-001"
+        
+        # Get the last product_id and extract the numeric part
+        last_product_id = matching.iloc[-1]["product_id"]
+        try:
+            numeric_part = int(str(last_product_id).split("-")[1])
+            next_numeric = numeric_part + 1
+            return f"{prefix}-{next_numeric:03d}"
+        except (ValueError, IndexError):
+            return f"{prefix}-{len(matching) + 1:03d}"
+
+    def save_uniform(self, uniform: UniformDTO, sizes: List[SizeDTO]) -> UniformDTO:
+        """Add a new uniform (product) with sizes to CSV files"""
+        # Save product
+        product_row = pd.DataFrame({
+            "product_id": [uniform.product_id],
+            "product_name": [uniform.product_name],
+            "price": [str(uniform.price)],
+            "uniform_type": [uniform.uniform_type],
+            "date_added": [uniform.date_added.strftime("%Y-%m-%d %H:%M:%S")],
+            "date_updated": [uniform.date_updated.strftime("%Y-%m-%d %H:%M:%S")],
+            "is_deleted": [str(uniform.is_deleted)],
+        })
+        self._products = pd.concat([self._products, product_row], ignore_index=True)
+        
+        # Save product sizes
+        if sizes:
+            size_rows = []
+            for size in sizes:
+                size_rows.append({
+                    "uniform_size_id": size.uniform_size_id,  # This must have a value
+                    "product_id": size.product_id,             # This must have a value
+                    "size": size.size,
+                    "length": size.length if size.length else "",
+                    "waistline": size.waistline if size.waistline else "",
+                    "bust_chest": size.bust_chest if size.bust_chest else "",
+                    "hips": size.hips if size.hips else "",
+                    "shoulder": size.shoulder if size.shoulder else "",
+                    "bottom_width": size.bottom_width if size.bottom_width else "",
+                    "product_stock": size.product_stock if size.product_stock else "",
+                })
+            sizes_df = pd.DataFrame(size_rows)
+            self._sizes = pd.concat([self._sizes, sizes_df], ignore_index=True)
+            
+            # Save sizes to CSV
+            csv_path = DATA_DIR / "uniforms" / "product_sizes.csv"
+            self._sizes.to_csv(csv_path, index=False)
+        
+        # Save products to CSV
+        csv_path = DATA_DIR / "uniforms" / "products.csv"
+        self._products.to_csv(csv_path, index=False)
+        
+        return uniform
 
     def _build_uniform_dto(self, product_row: pd.Series) -> UniformDTO:
         """Convert a product row to UniformDTO with associated sizes"""
