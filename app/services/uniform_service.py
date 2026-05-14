@@ -75,6 +75,33 @@ class UniformService:
             "uniform_type": saved_uniform.uniform_type,
             "sizes_added": len(size_dtos)
         }
+    def list_uniforms(self):
+        """Return all uniforms with sizes (formatted JSON response)"""
+        uniforms = self._uniform_dao.get_all()
 
+        result = []
+
+        for uniform in uniforms:
+            result.append({
+                "product_id": uniform.product_id,
+                "product_name": uniform.product_name,
+                "price": uniform.price,
+                "uniform_type": uniform.uniform_type,
+                "sizes": [
+                    {
+                        "size": size.size,
+                        "length": size.length,
+                        "waistline": size.waistline,
+                        "bust_chest": size.bust_chest,
+                        "hips": size.hips,
+                        "shoulder": size.shoulder,
+                        "bottom_width": size.bottom_width,
+                        "product_stock": size.product_stock
+                    }
+                    for size in (uniform.sizes or [])
+                ]
+            })
+
+        return result
 
 
