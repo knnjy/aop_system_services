@@ -34,14 +34,14 @@ class UniformDTO:
 @dataclass
 class BookDTO:
     """Data Transfer Object for books"""
-    book_id: int
-    subject_code: str
-    title: str
-    price: float
-    stock_quantity: int
-    semester_available: int
-    date_added: str
-    date_updated: str
-    program_related: str
-    availability: str
-    is_deleted: bool
+    book_id: Optional[str] = None
+    subject_code: str = ""
+    title: str = ""
+    price: float = 0.0
+    stock_quantity: int = 0
+    semester_available: int = 0
+    date_added: Optional[str] = None
+    date_updated: Optional[str] = None
+    program_related: str = ""
+    availability: str = "available"
+    is_deleted: bool = False

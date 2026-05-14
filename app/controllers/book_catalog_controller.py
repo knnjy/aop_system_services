@@ -1,3 +1,5 @@
+from app.dto.catalog_dto import BookDTO
+from app.services.book_service import BookService
 from fastapi import APIRouter
 import pandas as pd
 from datetime import datetime
@@ -99,30 +101,8 @@ def list_books():
     books = df.to_dict(orient="records")
     return books
 
-
-class Book(BaseModel):
-    title: str
-    author: str
-    year: str
+_book_service = BookService()
 
 @router.post("/add-book")
-async def add_book(book: Book):
-    df = pd.read_csv(BOOKS_PATH)
-
-    new_id = str(max(df["book_id"], default=0) + 1)
-    new_row = {
-        "book_id": new_id,
-        "title": book.title,
-        "author": book.author,
-        "year": book.year,
-        "is_deleted": False
-    }
-
-    df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
-    df.to_csv(BOOKS_PATH, index=False)
-
-    return {
-        "success": True,
-        "message": "Book added successfully",
-        "book": new_row
-    }
+def add_book(book: BookDTO):
+    return _book_service.add_new_book(book)

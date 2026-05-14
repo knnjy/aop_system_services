@@ -1,8 +1,9 @@
 from typing import List, Optional
+from pathlib import Path
 
 import pandas as pd
 
-from app.utils.csv_loader import load_csv
+from app.utils.csv_loader import load_csv, DATA_DIR
 from app.dto.catalog_dto import BookDTO
 
 
@@ -63,6 +64,45 @@ class BookDAO:
             book = self._build_book_dto(row)
             books.append(book)
         return books
+
+    def get_next_book_id(self) -> str:
+        """Generate the next book_id by incrementing from the last one"""
+        if self._books.empty:
+            return "BK0001"
+        
+        # Get the last book_id and extract the numeric part
+        last_book_id = self._books.iloc[-1]["book_id"]
+        # Remove 'BK' prefix and convert to int
+        try:
+            numeric_part = int(str(last_book_id).replace("BK", ""))
+            next_numeric = numeric_part + 1
+            return f"BK{next_numeric:04d}"
+        except (ValueError, AttributeError):
+            # Fallback if format is unexpected
+            return f"BK{len(self._books) + 1:04d}"
+
+    def save_book(self, book: BookDTO) -> BookDTO:
+        """Add a new book to the CSV file"""
+        new_row = pd.DataFrame({
+            "book_id": [str(book.book_id)],
+            "subject_code": [book.subject_code],
+            "Title": [book.title],
+            "Price": [str(book.price)],
+            "stock_quantity": [str(book.stock_quantity)],
+            "semester_available": [str(book.semester_available)],
+            "date_added": [book.date_added],
+            "date_updated": [book.date_updated],
+            "Program Related": [book.program_related],
+            "availability": [book.availability],
+            "is_deleted": [str(book.is_deleted)],
+        })
+        self._books = pd.concat([self._books, new_row], ignore_index=True)
+        
+        # Save to CSV
+        csv_path = DATA_DIR / "books" / "books_data.csv"
+        self._books.to_csv(csv_path, index=False)
+        
+        return book
 
     def _build_book_dto(self, book_row: pd.Series) -> BookDTO:
         """Convert a book row to BookDTO"""
