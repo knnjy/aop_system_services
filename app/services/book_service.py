@@ -2,7 +2,6 @@ from http.client import HTTPException
 from datetime import datetime
 
 from app.dao.book_dao import BookDAO
-from app.dao.orders_dao import OrderDAO
 from app.dto.catalog_dto import BookDTO
 
 

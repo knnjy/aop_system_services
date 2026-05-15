@@ -139,9 +139,6 @@ class OrderDAO:
 
         return {"message": f"Order {request_id} updated successfully"}
     
-        self._orders = load_csv("orders/book_order.csv")
-
-    # ✅ ADD THIS (soft delete)
     def cancel_order(self, order_id: str):
         if order_id.startswith("BOF"):
             order_file = DATA_DIR / "orders/book_order.csv"

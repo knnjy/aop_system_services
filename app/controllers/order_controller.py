@@ -25,3 +25,4 @@ def update_order(id: str, order_update: OrderUpdate):
 @router.delete("/{id}")
 def cancel_order(id: str):
     return _order_service.cancel_order(id)
+
