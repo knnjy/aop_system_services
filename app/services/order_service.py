@@ -7,6 +7,7 @@ class OrderService:
         self._order_dao = OrderDAO()
 
     def add_new_order(self, order_form: OrderRequest):
+<<<<<<< HEAD
 
         # double check if total amount is correct
         calculated_total = sum(item.quantity * item.unit_price for item in order_form.order_items)
@@ -36,3 +37,9 @@ class OrderService:
 
         #Return success message
         return {"message": f"Order {id} updated successfully"}
+=======
+        pass
+
+    def cancel_order(self, order_id: str):
+     return self._order_dao.cancel_order(order_id)
+>>>>>>> f82d83d (added soft delete cancel order endpoint)
