@@ -1,6 +1,5 @@
 from datetime import datetime
 from typing import List, Optional
-
 from pydantic import BaseModel, field_validator
 
 class OrderItem(BaseModel):
@@ -18,7 +17,13 @@ class OrderRequest(BaseModel):
     order_items: List[OrderItem]
     status: str
     date_created: datetime
+    approved_by: Optional[str] = None 
+
+class OrderUpdate(BaseModel):
+    status: Optional[str] = None
     approved_by: Optional[str] = None
+    
+
     
     # @field_validator("user_id")
     # @classmethod

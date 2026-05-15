@@ -113,3 +113,33 @@ class OrderDAO:
             self._uniform_orders_item = load_csv("orders/uniform_order_item.csv")
 
         return {"message": "Order saved successfully", "order_id": order.request_id}
+    
+    def update_order(self, request_id: str, updated_order: OrderRequest):
+        if request_id.startswith("BOF"):
+            order_file = DATA_DIR / "orders/book_order.csv"
+            id_field = "book_order_id"
+        elif request_id.startswith("UOF"):
+            order_file = DATA_DIR / "orders/uniform_order.csv"
+            id_field = "uniform_order_id"
+        else:
+            raise ValueError("Unknown order type")
+
+        # Load existing data
+        orders_df = pd.read_csv(order_file)
+
+        # Update only allowed fields (status, approved_by)
+        if updated_order.status is not None:
+            orders_df.loc[orders_df[id_field] == request_id, "status"] = updated_order.status
+        if updated_order.approved_by is not None:
+            orders_df.loc[orders_df[id_field] == request_id, "approved_by"] = updated_order.approved_by or ""
+
+        # Save back to CSV
+        orders_df.to_csv(order_file, index=False)
+
+        # Refresh in-memory DataFrames
+        if request_id.startswith("BOF"):
+            self._book_orders = load_csv("orders/book_order.csv")
+        else:
+            self._uniform_orders = load_csv("orders/uniform_order.csv")
+
+        return {"message": f"Order {request_id} updated successfully"}
