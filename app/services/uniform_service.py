@@ -1,8 +1,12 @@
 from http.client import HTTPException
 from datetime import datetime
+from typing import Union
+
+import pandas as pd
 
 from app.dao.uniform_dao import UniformDAO
 from app.dto.catalog_dto import UniformDTO, SizeDTO
+from app.utils.csv_loader import load_csv, DATA_DIR
 from app.utils.uniform_utils import get_size_abbreviation, extract_prefix
 
 
@@ -12,36 +16,27 @@ class UniformService:
 
     def create_new_uniform(self, uniform: UniformDTO, sizes: list = None):
         """Create a new uniform with sizes"""
-        # Auto-generate product_id if not provided
         if not uniform.product_id:
-            # Extract prefix from product_name or uniform_type
             prefix = extract_prefix(uniform.product_name or uniform.uniform_type)
             uniform.product_id = self._uniform_dao.get_next_product_id(prefix)
         else:
-            # Check if product_id already exists
             if self._uniform_dao.get_by_product_id(uniform.product_id):
                 raise HTTPException(status_code=409, detail=f"Product with ID {uniform.product_id} already exists")
         
-        # Always set timestamps to current date
         current_date = datetime.now()
         uniform.date_added = current_date
         uniform.date_updated = current_date
         
-        # Set default values if not provided
         if uniform.is_deleted is None:
             uniform.is_deleted = False
         
-        # Process sizes
         size_dtos = []
         sizes_list = sizes or uniform.sizes or []
         if sizes_list:
             for size_data in sizes_list:
                 if isinstance(size_data, dict):
-                    # Extract size abbreviation
                     size_str = size_data.get('size', 'S')
                     size_abbrev = get_size_abbreviation(size_str)
-                    
-                    # Generate uniform_size_id
                     size_id = f"{uniform.product_id}-{size_abbrev}"
                     size_dto = SizeDTO(
                         uniform_size_id=size_id,
@@ -58,14 +53,12 @@ class UniformService:
                     size_dtos.append(size_dto)
                     
                 elif isinstance(size_data, SizeDTO):
-                    # Generate the ID if not already set
                     if not size_data.uniform_size_id or not size_data.product_id:
                         size_abbrev = get_size_abbreviation(size_data.size)
                         size_data.uniform_size_id = f"{uniform.product_id}-{size_abbrev}"
                         size_data.product_id = uniform.product_id
                     size_dtos.append(size_data)
                 
-        # Save the uniform and sizes to CSV
         saved_uniform = self._uniform_dao.save_uniform(uniform, size_dtos)
         
         return {
@@ -75,6 +68,83 @@ class UniformService:
             "uniform_type": saved_uniform.uniform_type,
             "sizes_added": len(size_dtos)
         }
+
+    def _safe_write_csv(self, df: pd.DataFrame, csv_name: str):
+        csv_path = DATA_DIR / "uniforms" / csv_name
+        df.to_csv(csv_path, index=False)
+
+    def update_uniform(
+        self,
+        uniform_code: str,
+        product_name: str = None,
+        price: float = None,
+        uniform_type: str = None,
+        size: str = None,
+        length: Union[float, str] = None,
+        waistline: Union[float, str] = None,
+        bust_chest: Union[float, str] = None,
+        hips: Union[float, str] = None,
+        shoulder: Union[float, str] = None,
+        bottom_width: Union[float, str] = None
+    ):
+        products = load_csv("uniforms/products.csv")
+        uniform_code_str = str(uniform_code).strip()
+        mask = products["product_id"].astype(str).str.strip() == uniform_code_str
+
+        if not mask.any():
+            return {"error": "Uniform not found"}
+
+        if "is_deleted" in products.columns:
+            deleted_mask = mask & products["is_deleted"].isin([True, "True", "true", 1, "1"])
+            if deleted_mask.any():
+                products.loc[deleted_mask, "is_deleted"] = False
+
+        if product_name is not None:
+            products.loc[mask, "product_name"] = product_name
+
+        if price is not None:
+            products.loc[mask, "price"] = price
+
+        if uniform_type is not None:
+            products.loc[mask, "uniform_type"] = uniform_type
+
+        if "date_updated" in products.columns:
+            products.loc[mask, "date_updated"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        self._safe_write_csv(products, "products.csv")
+
+        # ✅ Updated to lowercase column names
+        size_updates = {
+            "length": length,
+            "waistline": waistline,
+            "bust_chest": bust_chest,
+            "hips": hips,
+            "shoulder": shoulder,
+            "bottom_width": bottom_width
+        }
+
+        if size is not None and any(v is not None for v in size_updates.values()):
+            sizes_df = load_csv("uniforms/product_sizes.csv")
+            sizes_df.columns = sizes_df.columns.str.strip()
+
+            # ✅ Updated "Size" to "size"
+            size_mask = (
+                sizes_df["product_id"].astype(str).str.strip() == uniform_code_str
+            ) & (
+                sizes_df["size"].astype(str).str.strip() == str(size).strip()
+            )
+
+            if size_mask.any():
+                for column, value in size_updates.items():
+                    if value is not None:
+                        sizes_df.loc[size_mask, column] = value
+                self._safe_write_csv(sizes_df, "product_sizes.csv")
+
+        return {
+            "success": True,
+            "message": f"Uniform {uniform_code} updated successfully."
+        }
+
     def list_uniforms(self):
         """Return all uniforms with sizes (formatted JSON response)"""
         uniforms = self._uniform_dao.get_all()
@@ -103,5 +173,3 @@ class UniformService:
             })
 
         return result
-
-
