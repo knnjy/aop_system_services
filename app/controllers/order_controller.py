@@ -20,7 +20,7 @@ def create_order(id: str):
     return _order_service.get_order(id)
 
 @router.put("/update-order/{id}")
-def update_order(id: int, order_update: OrderUpdate):
+def update_order(id: str, order_update: OrderUpdate):
     return _order_service.update_order(id, order_update)
 
 @router.delete("/{id}")

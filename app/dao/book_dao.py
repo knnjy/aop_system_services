@@ -22,6 +22,8 @@ class BookDAO:
     def get_by_book_id(self, book_id: int) -> Optional[BookDTO]:
         """Fetch a specific book by book_id"""
         match = self._books[self._books["book_id"] == book_id]
+        grouped = self._books.groupby("subject_code")["stock_quantity"].sum()
+        print(grouped.to_dict())
         if match.empty:
             return None
         return self._build_book_dto(match.iloc[0])
@@ -119,3 +121,12 @@ class BookDAO:
             availability=str(book_row["availability"]),
             is_deleted=bool(book_row["is_deleted"]),
         )
+    def get_stock_by_subject_code(self) -> dict:
+        """Return stock quantities grouped by subject_code"""
+        if self._books.empty:
+            return {}
+        
+        grouped = self._books.groupby("subject_code")["stock_quantity"].sum()
+        return grouped.to_dict()
+
+    

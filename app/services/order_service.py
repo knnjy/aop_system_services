@@ -19,7 +19,7 @@ class OrderService:
     def get_order(self, request_id: str):
         return self._order_dao.get_order(request_id)
     
-    def update_order(self, id: int, order_update: OrderUpdate):
+    def update_order(self, id: str, order_update: OrderUpdate):
         #Fetch existing order
         order = self._order_dao.get_order(id)
         if not order:
