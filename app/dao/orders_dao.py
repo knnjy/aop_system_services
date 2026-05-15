@@ -113,6 +113,16 @@ class OrderDAO:
 
         return {"message": "Order saved successfully", "order_id": order.request_id}
     
+    def get_order(self, request_id: str):
+        orders_df = load_csv("data/orders/book_order.csv")
+    items_df = load_csv("data/orders/book_order_item.csv")
+
+    order = orders_df[orders_df["request_id"] == request_id].to_dict("records")[0]
+    order_items = items_df[items_df["request_id"] == request_id].to_dict("records")
+
+    order["order_items"] = order_items
+    return order
+
     def update_order(self, request_id: str, updated_order: OrderRequest):
         if request_id.startswith("BOF"):
             order_file = DATA_DIR / "orders/book_order.csv"

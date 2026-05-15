@@ -18,7 +18,12 @@ class OrderService:
     
     def get_order(self, request_id: str):
         return self._order_dao.get_order(request_id)
-    
+        if role.lower() == "user":
+            order.pop("approved_by", None)
+            order.pop("status", None)
+
+    return order
+
     def update_order(self, id: int, order_update: OrderUpdate):
         #Fetch existing order
         order = self._order_dao.get_order(id)
