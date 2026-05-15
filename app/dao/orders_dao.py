@@ -1,20 +1,13 @@
-<<<<<<< HEAD
-import csv
 from datetime import datetime
 import pandas as pd
 from typing import Optional
 
-from app.controllers.uniform_catalog_controller import DATA_DIR
 from app.dto.order_dto import OrderItem, OrderRequest
 from app.utils.csv_loader import load_csv
-=======
 from app.utils.csv_loader import load_csv, DATA_DIR
-import pandas as pd
->>>>>>> f82d83d (added soft delete cancel order endpoint)
 
 class OrderDAO:
     def __init__(self) -> None:
-<<<<<<< HEAD
         # These are DataFrames
         self._book_orders = load_csv("orders/book_order.csv")
         self._book_orders_item = load_csv("orders/book_order_item.csv")
@@ -149,7 +142,6 @@ class OrderDAO:
             self._uniform_orders = load_csv("orders/uniform_order.csv")
 
         return {"message": f"Order {request_id} updated successfully"}
-=======
         self._orders = load_csv("orders/book_order.csv")
 
     def cancel_order(self, order_id: str):
@@ -170,4 +162,3 @@ class OrderDAO:
             "message": f"Order {order_id} cancelled successfully",
             "status": "cancelled"
         }
->>>>>>> f82d83d (added soft delete cancel order endpoint)
