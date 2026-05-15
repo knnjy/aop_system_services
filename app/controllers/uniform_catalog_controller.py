@@ -128,60 +128,19 @@ def update_uniform(
     shoulder: Union[float, str] = None,
     bottom_width: Union[float, str] = None
 ):
-    # Update products.csv
-    df = safe_read_csv(UNIFORMS_PATH)
-
-    mask = df["product_id"].astype(str).str.strip() == uniform_code.strip()
-    if not mask.any():
-        return {"error": "Uniform not found"}
-
-    # Auto-restore soft-deleted uniforms
-    if "is_deleted" in df.columns:
-        deleted_mask = mask & df["is_deleted"].isin([True, "True", "true", 1, "1"])
-        if deleted_mask.any():
-            df.loc[deleted_mask, "is_deleted"] = False
-
-    if product_name is not None:
-        df.loc[mask, "product_name"] = product_name
-
-    if price is not None:
-        df.loc[mask, "price"] = price
-
-    if uniform_type is not None:
-        df.loc[mask, "uniform_type"] = uniform_type
-
-    if "date_updated" in df.columns:
-        df.loc[mask, "date_updated"] = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
-
-    safe_write_csv(df, UNIFORMS_PATH)
-
-    # Update product_sizes.csv if size-related parameters are provided
-    size_updates = {
-        "Length": length,
-        "Waistline": waistline,
-        "Bust/Chest": bust_chest,
-        "Hips": hips,
-        "Shoulder": shoulder,
-        "Bottom Width": bottom_width
-    }
-    if size is not None and any(v is not None for v in size_updates.values()):
-        sizes_df = safe_read_csv(SIZES_PATH)
-        sizes_df.columns = sizes_df.columns.str.strip()
-
-        size_mask = (sizes_df["product_id"].astype(str).str.strip() == uniform_code.strip()) & \
-                    (sizes_df["Size"].astype(str).str.strip() == size.strip())
-
-        if size_mask.any():
-            for column, value in size_updates.items():
-                if value is not None:
-                    sizes_df.loc[size_mask, column] = value
-
-            safe_write_csv(sizes_df, SIZES_PATH)  # ✅ outside all if blocks
-
-    return {
-        "success": True,
-        "message": f"Uniform {uniform_code} updated successfully."
-    }
+    return _uniform_service.update_uniform(
+        uniform_code=uniform_code,
+        product_name=product_name,
+        price=price,
+        uniform_type=uniform_type,
+        size=size,
+        length=length,
+        waistline=waistline,
+        bust_chest=bust_chest,
+        hips=hips,
+        shoulder=shoulder,
+        bottom_width=bottom_width
+    )
 
 
 # RTU UNIFORM FILTERING
