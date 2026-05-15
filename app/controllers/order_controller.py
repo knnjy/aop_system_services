@@ -14,9 +14,8 @@ def home():
 def create_order(order_form: OrderRequest):
     return _order_service.add_new_order(order_form)
 
-
 @router.get("/get-order/{id}")
-def create_order(id: str):
+def get_order(id: str):
     return _order_service.get_order(id)
 
 @router.put("/update-order/{id}")
