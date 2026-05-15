@@ -14,17 +14,14 @@ def home():
 def create_order(order_form: OrderRequest):
     return _order_service.add_new_order(order_form)
 
-<<<<<<< HEAD
-
 @router.get("/get-order/{id}")
-def create_order(id: str):
+def get_order(id: str):
     return _order_service.get_order(id)
 
 @router.put("/update-order/{id}")
-def update_order(id: int, order_update: OrderUpdate):
+def update_order(id: str, order_update: OrderUpdate):
     return _order_service.update_order(id, order_update)
-=======
+
 @router.delete("/{id}")
 def cancel_order(id: str):
     return _order_service.cancel_order(id)
->>>>>>> f82d83d (added soft delete cancel order endpoint)
