@@ -105,7 +105,10 @@ def list_books():
     return books
 
 
-
 @router.post("/add-book")
 def add_book(book: BookDTO):
     return _book_service.add_new_book(book)
+
+@router.get("/get-book-stock")
+def get_stock():
+    return _book_service.book_stock_update()

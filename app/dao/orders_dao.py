@@ -1,9 +1,9 @@
 from datetime import datetime
 import pandas as pd
+from datetime import datetime
 from typing import Optional
 
 from app.dto.order_dto import OrderItem, OrderRequest
-from app.utils.csv_loader import load_csv
 from app.utils.csv_loader import load_csv, DATA_DIR
 
 class OrderDAO:
@@ -28,14 +28,14 @@ class OrderDAO:
         else:
             return None
 
-        # Find order row
         order_rows = orders_df.loc[orders_df[id_field] == request_id].to_dict("records")
         if not order_rows:
             return None
+
         order_row = order_rows[0]
 
-        # Build OrderItems
         item_rows = items_df.loc[items_df[id_field] == request_id].to_dict("records")
+
         order_items = [
             OrderItem(
                 order_item_id=item["order_item_id"],
@@ -57,7 +57,7 @@ class OrderDAO:
             date_created=datetime.strptime(order_row["date_created"], "%Y-%m-%d"),
             approved_by=order_row.get("approved_by") or None
         )
-          
+
     def save_order(self, order: OrderRequest):
         if order.request_id.startswith("BOF"):
             order_file = DATA_DIR / "orders/book_order.csv"
@@ -72,11 +72,9 @@ class OrderDAO:
         else:
             raise ValueError("Unknown order type")
 
-        # Ensure directories exist
         order_file.parent.mkdir(parents=True, exist_ok=True)
         item_file.parent.mkdir(parents=True, exist_ok=True)
 
-        # Append order row
         order_row = {
             id_field: order.request_id,
             "user_id": order.user_id,
@@ -87,9 +85,9 @@ class OrderDAO:
             "date_created": order.date_created.strftime("%Y-%m-%d"),
             "approved_by": order.approved_by or ""
         }
+
         pd.DataFrame([order_row]).to_csv(order_file, mode="a", header=not order_file.exists(), index=False)
 
-        # Append item rows
         item_rows = [
             {
                 "order_item_id": item.order_item_id,
@@ -101,9 +99,10 @@ class OrderDAO:
             }
             for item in order.order_items
         ]
+
         pd.DataFrame(item_rows).to_csv(item_file, mode="a", header=not item_file.exists(), index=False)
-        
-        # Refresh in-memory DataFrames so get_order sees new data
+
+        # refresh cache
         if order.request_id.startswith("BOF"):
             self._book_orders = load_csv("orders/book_order.csv")
             self._book_orders_item = load_csv("orders/book_order_item.csv")
@@ -113,6 +112,16 @@ class OrderDAO:
 
         return {"message": "Order saved successfully", "order_id": order.request_id}
     
+    def get_order(self, request_id: str):
+        orders_df = load_csv("data/orders/book_order.csv")
+    items_df = load_csv("data/orders/book_order_item.csv")
+
+    order = orders_df[orders_df["request_id"] == request_id].to_dict("records")[0]
+    order_items = items_df[items_df["request_id"] == request_id].to_dict("records")
+
+    order["order_items"] = order_items
+    return order
+
     def update_order(self, request_id: str, updated_order: OrderRequest):
         if request_id.startswith("BOF"):
             order_file = DATA_DIR / "orders/book_order.csv"
@@ -123,40 +132,48 @@ class OrderDAO:
         else:
             raise ValueError("Unknown order type")
 
-        # Load existing data
         orders_df = pd.read_csv(order_file)
 
-        # Update only allowed fields (status, approved_by)
         if updated_order.status is not None:
             orders_df.loc[orders_df[id_field] == request_id, "status"] = updated_order.status
+
         if updated_order.approved_by is not None:
             orders_df.loc[orders_df[id_field] == request_id, "approved_by"] = updated_order.approved_by or ""
 
-        # Save back to CSV
         orders_df.to_csv(order_file, index=False)
 
-        # Refresh in-memory DataFrames
         if request_id.startswith("BOF"):
             self._book_orders = load_csv("orders/book_order.csv")
         else:
             self._uniform_orders = load_csv("orders/uniform_order.csv")
 
         return {"message": f"Order {request_id} updated successfully"}
-        self._orders = load_csv("orders/book_order.csv")
-
+    
     def cancel_order(self, order_id: str):
-        # hanapin order
-        mask = self._orders["book_order_id"] == order_id
+        if order_id.startswith("BOF"):
+            order_file = DATA_DIR / "orders/book_order.csv"
+            id_field = "book_order_id"
+            df = self._book_orders
+        elif order_id.startswith("UOF"):
+            order_file = DATA_DIR / "orders/uniform_order.csv"
+            id_field = "uniform_order_id"
+            df = self._uniform_orders
+        else:
+            return None
+
+        mask = df[id_field] == order_id
 
         if not mask.any():
             return None
 
-        # palitan status
-        self._orders.loc[mask, "status"] = "cancelled"
+        df.loc[mask, "status"] = "cancelled"
+        df.to_csv(order_file, index=False)
 
-        # save sa csv
-        csv_path = DATA_DIR / "orders" / "book_order.csv"
-        self._orders.to_csv(csv_path, index=False)
+        # refresh cache
+        if order_id.startswith("BOF"):
+            self._book_orders = load_csv("orders/book_order.csv")
+        else:
+            self._uniform_orders = load_csv("orders/uniform_order.csv")
 
         return {
             "message": f"Order {order_id} cancelled successfully",

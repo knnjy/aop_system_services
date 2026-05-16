@@ -2,16 +2,16 @@ from http.client import HTTPException
 from datetime import datetime
 
 from app.dao.book_dao import BookDAO
-from app.dao.orders_dao import OrderDAO
 from app.dto.catalog_dto import BookDTO
 
 
 class BookService:
     def __init__(self):
         self._book_dao = BookDAO()
-
+   
     def add_new_book(self, order_form: BookDTO):
         # Auto-generate book_id if not provided
+        
         if not order_form.book_id:
             order_form.book_id = self._book_dao.get_next_book_id()
         else:
@@ -32,10 +32,14 @@ class BookService:
         
         # Save the book to CSV
         saved_book = self._book_dao.save_book(order_form)
-        
+
         return {
             "message": "Book added successfully",
             "book_id": saved_book.book_id,
             "title": saved_book.title,
             "subject_code": saved_book.subject_code
         }
+    
+    def book_stock_update(self):
+
+        return self._book_dao.get_stock_by_subject_code()

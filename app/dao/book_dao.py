@@ -119,3 +119,12 @@ class BookDAO:
             availability=str(book_row["availability"]),
             is_deleted=bool(book_row["is_deleted"]),
         )
+    def get_stock_by_subject_code(self) -> dict:
+        """Return stock quantities grouped by subject_code"""
+        if self._books.empty:
+            return {}
+        
+        grouped = self._books.groupby("subject_code")["stock_quantity"].sum()
+        return grouped.to_dict()
+
+    
