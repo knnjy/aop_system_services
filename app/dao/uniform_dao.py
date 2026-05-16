@@ -139,3 +139,18 @@ class UniformDAO:
             is_deleted=bool(product_row["is_deleted"]),
             sizes=sizes if sizes else None,
         )
+    
+    
+#Uniform Filter
+class UniformDAO:
+    @staticmethod
+    def load_uniforms() -> pd.DataFrame:
+        df = load_csv("uniforms/products.csv")
+        # Ensure is_deleted column exists
+        if "is_deleted" not in df.columns:
+            df["is_deleted"] = False
+        return df
+
+    @staticmethod
+    def load_sizes() -> pd.DataFrame:
+        return load_csv("uniforms/product_sizes.csv")
