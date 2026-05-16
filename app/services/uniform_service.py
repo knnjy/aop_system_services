@@ -1,6 +1,6 @@
 from http.client import HTTPException
 from datetime import datetime
-from typing import Union
+from typing import Union, List
 
 import pandas as pd
 
@@ -8,7 +8,7 @@ from app.dao.uniform_dao import UniformDAO
 from app.dto.catalog_dto import UniformDTO, SizeDTO
 from app.utils.csv_loader import load_csv, DATA_DIR
 from app.utils.uniform_utils import get_size_abbreviation, extract_prefix
-
+from app.utils.uniform_utils import clean_row, strip_unwanted_fields
 
 class UniformService:
     def __init__(self):
@@ -127,7 +127,7 @@ class UniformService:
             sizes_df = load_csv("uniforms/product_sizes.csv")
             sizes_df.columns = sizes_df.columns.str.strip()
 
-            # ✅ Updated "Size" to "size"
+            # Updated "Size" to "size"
             size_mask = (
                 sizes_df["product_id"].astype(str).str.strip() == uniform_code_str
             ) & (
@@ -173,3 +173,48 @@ class UniformService:
             })
 
         return result
+    
+
+#Uniform Filter    
+class UniformService:
+    def __init__(self):
+        self.dao = UniformDAO
+
+    def list_uniforms(self, uniform_type: str = None) -> List[dict]:
+        df = self.dao.load_uniforms()
+        sizes_df = self.dao.load_sizes()
+
+        df['product_id'] = df['product_id'].astype(str).str.strip()
+        sizes_df['product_id'] = sizes_df['product_id'].astype(str).str.strip()
+
+        df = df[df['is_deleted'].isin([False, 'False', 'false', 0, '0'])]
+
+        if uniform_type:
+            cleaned_uniform_type = uniform_type.strip().lower()
+            df = df[df['uniform_type'].astype(str).str.strip().str.lower() == cleaned_uniform_type]
+
+        uniforms: List[dict] = []
+        for _, product in df.iterrows():
+            product_data = clean_row(product)
+            pid = product['product_id']
+            product_sizes = sizes_df[sizes_df['product_id'] == pid]
+
+            sizes_list: List[SizeDTO] = []
+            for _, size_row in product_sizes.iterrows():
+                cleaned_size = clean_row(size_row)
+                if cleaned_size:
+                    sizes_list.append(SizeDTO(**cleaned_size))
+
+            uniform = UniformDTO(**product_data, sizes=sizes_list)
+            data = strip_unwanted_fields(uniform.__dict__.copy())  
+
+            # Clean nested sizes too
+            cleaned_sizes = []
+            for size in data.get("sizes", []):
+                size_data = strip_unwanted_fields(size.__dict__.copy())
+                cleaned_sizes.append(size_data)
+
+            data["sizes"] = cleaned_sizes
+            uniforms.append(data)
+
+        return uniforms

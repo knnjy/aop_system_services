@@ -5,6 +5,11 @@ from app.dao.book_dao import BookDAO
 from app.dto.catalog_dto import BookDTO
 
 
+
+COLUMNS = ["book_id","subject_code","Title","Price","stock_quantity",
+           "semester_available","date_added","date_updated",
+           "Program Related","availability"]
+
 class BookService:
     def __init__(self):
         self._book_dao = BookDAO()
@@ -43,3 +48,7 @@ class BookService:
     def book_stock_update(self):
 
         return self._book_dao.get_stock_by_subject_code()
+    
+    #Book filtering
+    def filter_books(self, program_related=None, title=None, semester_available=None):
+        return self._book_dao.filter_books(program_related, title, semester_available)

@@ -7,6 +7,7 @@ from app.utils.csv_loader import load_csv, DATA_DIR
 from app.dto.catalog_dto import BookDTO
 
 
+
 class BookDAO:
     def __init__(self) -> None:
         self._books = load_csv("books/books_data.csv")
@@ -126,5 +127,58 @@ class BookDAO:
         
         grouped = self._books.groupby("subject_code")["stock_quantity"].sum()
         return grouped.to_dict()
+    
+    # Load books with is_deleted check
+    def load_books(self) -> pd.DataFrame:
+        """Load books from CSV with is_deleted column check"""
+        # Replace the missing global variable with a direct local string path
+        target_path = "data/books/books_data.csv"
+        
+        df = pd.read_csv(target_path)
+        if "is_deleted" not in df.columns:
+            df["is_deleted"] = False
+        return df
 
+    # Filter books by program, title, and semester
+    def filter_books(self, program_related=None, title=None, semester_available=None) -> List[dict]:
+        """Load CSV directly, filter, and return a list of plain dicts (no DTO mapping)."""
+        import pandas as pd
+
+        target_path = "data/books/books_data.csv"
+        try:
+            df = pd.read_csv(target_path)
+        except Exception:
+            return []
+
+        # Filter out deleted rows if column exists
+        if "is_deleted" in df.columns:
+            df = df[df["is_deleted"].astype(str).str.lower().str.strip() != "true"]
+
+        # Apply dynamic filters
+        if program_related:
+            df = df[df["Program Related"].astype(str).str.contains(str(program_related).strip(), case=False, na=False, regex=False)]
+
+        if title:
+            df = df[df["Title"].astype(str).str.contains(str(title).strip(), case=False, na=False, regex=False)]
+
+        if semester_available is not None:
+            df["semester_available"] = pd.to_numeric(df["semester_available"], errors="coerce")
+            df = df[df["semester_available"] == int(semester_available)]
+
+        output_books = []
+        for _, row in df.iterrows():
+            output_books.append({
+                "book_id": str(row.get("book_id", "")),
+                "subject_code": str(row.get("subject_code", "")),
+                "Title": str(row.get("Title", "")),
+                "Price": float(row.get("Price", 0)) if pd.notna(row.get("Price")) else 0.0,
+                "stock_quantity": int(row.get("stock_quantity", 0)) if pd.notna(row.get("stock_quantity")) else 0,
+                "semester_available": int(row.get("semester_available", 0)) if pd.notna(row.get("semester_available")) else 0,
+                "date_added": str(row.get("date_added", "")),
+                "date_updated": str(row.get("date_updated", "")),
+                "Program Related": str(row.get("Program Related", "")),
+                "availability": str(row.get("availability", ""))
+            })
+
+        return output_books
     

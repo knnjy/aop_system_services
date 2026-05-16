@@ -144,84 +144,19 @@ def update_uniform(
 
 
 # RTU UNIFORM FILTERING
-RTU_UNIFORMS_PATH = "data/uniforms/products.csv"
+router = APIRouter(prefix="/api/uniforms", tags=["Uniforms"])
+uniform_service = UniformService()
 
+# List all uniforms (no filter)
+@router.get("/list-uniforms")
+def list_all_uniforms():
+    return uniform_service.list_uniforms()
 
-def _load_rtu_uniforms() -> pd.DataFrame:
-    df = load_csv("uniforms/products.csv")
-    df["is_deleted"] = df.get("is_deleted", False)
-    return df
-
-
+# Filter uniforms by type
 @router.get("/filter-uniform")
-def list_rtu_uniforms(
-    size: str = None,
-    gender: str = None,
-    uniform_type: str = None
-):
-    df = _load_rtu_uniforms()
-    sizes_df = load_csv("uniforms/product_sizes.csv")
+def list_rtu_uniforms(uniform_type: str = None):
+    return uniform_service.list_uniforms(uniform_type)
 
-    df["product_id"] = df["product_id"].astype(str).str.strip()
-    sizes_df["product_id"] = sizes_df["product_id"].astype(str).str.strip()
-
-    gender_mapping = {
-        'TOP-001': 'Male',
-        'TOP-002': 'Female',
-        'BOT-001': 'Male',
-        'SKT-001': 'Female',
-        'PNT-001': 'Female',
-        'SHT-001': 'Unisex',
-        'PNT-002': 'Unisex',
-        'SHT-002': 'Unisex'
-    }
-    df['Gender'] = df['product_id'].map(gender_mapping)
-
-    df = df[df['is_deleted'].isin([False, 'False', 'false', 0, '0'])]
-
-    if uniform_type:
-        cleaned_uniform_type = uniform_type.strip().lower()
-        df = df[df['uniform_type'].astype(str).str.strip().str.lower() == cleaned_uniform_type]
-
-    if gender:
-        cleaned_gender = gender.strip().lower()
-        if cleaned_gender == 'male':
-            allowed_genders = ['male', 'unisex']
-        elif cleaned_gender == 'female':
-            allowed_genders = ['female', 'unisex']
-        else:
-            allowed_genders = [cleaned_gender]
-
-        df = df[df['Gender'].astype(str).str.strip().str.lower().isin(allowed_genders)]
-
-    if size:
-        cleaned_size = size.strip().lower()
-        matching_ids = sizes_df[
-            sizes_df['Size'].astype(str).str.strip().str.lower() == cleaned_size
-        ]['product_id'].unique()
-        df = df[df['product_id'].isin(matching_ids)]
-
-    result = []
-    for _, product in df.iterrows():
-        pid = product['product_id']
-        product_sizes = sizes_df[sizes_df['product_id'] == pid]
-
-        if size:
-            product_sizes = product_sizes[product_sizes['Size'].astype(str).str.lower() == size.lower()]
-
-        product_info = []
-        for _, size_row in product_sizes.iterrows():
-            cleaned_row = clean_size_data(size_row)
-            if cleaned_row:
-                product_info.append(cleaned_row)
-
-        result.append({
-            'product_name': product['product_name'],
-            'uniform_type': product['uniform_type'],
-            'Product Info': product_info
-        })
-
-    return result
 
 
 # DELETE (SOFT DELETE) UNIFORM

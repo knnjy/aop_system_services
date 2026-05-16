@@ -4,12 +4,14 @@ from fastapi import APIRouter
 import pandas as pd
 from datetime import datetime
 from pydantic import BaseModel
+from app.dao.book_dao import BookDAO
+
 
 router = APIRouter(prefix="/api/books")
 
 _book_service = BookService()
-
 BOOKS_PATH = "data/books/books_data.csv"
+
 
 
 def _load_books():
@@ -35,24 +37,10 @@ def list_books():
     return df[columns].to_dict(orient="records")
 
 
-# Filter book by Program_related, Title, & semester available
+#Filter books by program, title, and semester
 @router.get("/filter-books")
-def filter_books(program_related: str = None, title: str = None, semester_available: int = None):
-    df = _load_books()
-    df = df[df["is_deleted"] == False]
-
-    if program_related:
-        df = df[df["Program Related"].astype(str).str.contains(program_related, case=False, na=False)]
-
-    if title:
-        df = df[df["Title"].astype(str).str.contains(title, case=False, na=False)]
-
-    if semester_available is not None:
-        df = df[df["semester_available"] == semester_available]
-
-    columns = ["book_id", "subject_code", "Title", "Price", "stock_quantity", "semester_available", "date_added", "date_updated", "Program Related", "availability"]
-    return df[columns].to_dict(orient="records")
-
+def filter_books_route(program_related: str = None, title: str = None, semester_available: int = None):
+    return _book_service.filter_books(program_related, title, semester_available)
 
 # Soft delete book on books_data
 @router.delete("/delete-book/{book_id}")
