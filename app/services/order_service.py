@@ -18,20 +18,12 @@ class OrderService:
         return self._order_dao.save_order(order_form)
 
     def get_order(self, request_id: str):
-<<<<<<< HEAD
         return self._order_dao.get_order(request_id)
-        if role.lower() == "user":
-            order.pop("approved_by", None)
-            order.pop("status", None)
 
-    return order
-
-    def update_order(self, id: int, order_update: OrderUpdate):
-=======
-        return self._order_dao.get_oredr(request_id)
+    def list_orders(self):
+        return self._order_dao.get_all_orders()
     
     def update_order(self, id: str, order_update: OrderUpdate):
->>>>>>> 1173326683388cfaea8752052c93302fa09a9945
         #Fetch existing order
         order = self._order_dao.get_order(id)
         if not order:

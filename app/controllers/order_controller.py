@@ -18,6 +18,10 @@ def create_order(order_form: OrderRequest):
 def get_order(id: str):
     return _order_service.get_order(id)
 
+@router.get("/list-order")
+def list_orders():
+    return _order_service.list_orders()
+
 @router.put("/update-order/{id}")
 def update_order(id: str, order_update: OrderUpdate):
     return _order_service.update_order(id, order_update)
