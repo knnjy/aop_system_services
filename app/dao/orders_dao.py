@@ -112,15 +112,40 @@ class OrderDAO:
 
         return {"message": "Order saved successfully", "order_id": order.request_id}
     
-    def get_order(self, request_id: str):
-        orders_df = load_csv("data/orders/book_order.csv")
-    items_df = load_csv("data/orders/book_order_item.csv")
+    def get_all_orders(self):
+        orders = []
 
-    order = orders_df[orders_df["request_id"] == request_id].to_dict("records")[0]
-    order_items = items_df[items_df["request_id"] == request_id].to_dict("records")
+        for _, row in self._book_orders.iterrows():
+            order_item_ids = self._book_orders_item.loc[
+                self._book_orders_item["book_order_id"] == row["book_order_id"],
+                "order_item_id"
+            ].tolist()
 
-    order["order_items"] = order_items
-    return order
+            orders.append({
+                "request_id": row["book_order_id"],
+                "user_id": row["user_id"],
+                "total_amount": float(row["total_amount"]),
+                "status": row["status"],
+                "date_created": row["date_created"],
+                "order_item_ids": order_item_ids
+            })
+
+        for _, row in self._uniform_orders.iterrows():
+            order_item_ids = self._uniform_orders_item.loc[
+                self._uniform_orders_item["uniform_order_id"] == row["uniform_order_id"],
+                "order_item_id"
+            ].tolist()
+
+            orders.append({
+                "request_id": row["uniform_order_id"],
+                "user_id": row["user_id"],
+                "total_amount": float(row["total_amount"]),
+                "status": row["status"],
+                "date_created": row["date_created"],
+                "order_item_ids": order_item_ids
+            })
+
+        return orders
 
     def update_order(self, request_id: str, updated_order: OrderRequest):
         if request_id.startswith("BOF"):
