@@ -7,7 +7,7 @@ from fastapi import APIRouter
 from app.dto.auth_dto import LoginRequest, LoginResponse
 from app.services.auth_service import AuthService
 
-router = APIRouter(prefix="/api/auth", tags=["Auth"])
+router = APIRouter(prefix="/api/auth", tags=["Auth Endpoints"])
 _auth_service = AuthService()
 
 

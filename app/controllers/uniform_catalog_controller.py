@@ -5,7 +5,7 @@ import pandas as pd
 from pathlib import Path
 from pydantic import BaseModel
 from typing import Union, Optional, Dict, Any, List
-router = APIRouter(prefix="/api/uniforms", tags=["Uniforms"])
+router = APIRouter(prefix="/api/uniforms", tags=["Uniform Endpoints"])
 
 _uniform_service = UniformService()
 

@@ -6,7 +6,7 @@ from datetime import datetime
 from pydantic import BaseModel
 from app.dao.book_dao import BookDAO
 
-router = APIRouter(prefix="/api/books")
+router = APIRouter(prefix="/api/books", tags=["Book Endpoints"])
 
 _book_service = BookService()
 

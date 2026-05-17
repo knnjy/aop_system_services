@@ -2,13 +2,9 @@ from app.dto.order_dto import OrderRequest, OrderUpdate
 from app.services.order_service import OrderService
 from fastapi import APIRouter
 
-router = APIRouter(prefix="/api/orders", tags=["Order"])
+router = APIRouter(prefix="/api/orders", tags=["Order Endpoints"])
 
 _order_service = OrderService()
-
-@router.get("/")
-def home():
-    return {"message": "Order Management API Working"}
 
 @router.post("/add-order")
 def create_order(order_form: OrderRequest):
@@ -18,7 +14,7 @@ def create_order(order_form: OrderRequest):
 def get_order(id: str):
     return _order_service.get_order(id)
 
-@router.get("/list-order")
+@router.get("/list-orders")
 def list_orders():
     return _order_service.list_orders()
 
@@ -26,7 +22,7 @@ def list_orders():
 def update_order(id: str, order_update: OrderUpdate):
     return _order_service.update_order(id, order_update)
 
-@router.delete("/{id}")
+@router.delete("/cancel-order/{id}")
 def cancel_order(id: str):
     return _order_service.cancel_order(id)
 

@@ -1,3 +1,5 @@
+from fastapi import HTTPException
+
 from app.dao.orders_dao import OrderDAO
 from app.dto.order_dto import OrderRequest, OrderUpdate
 
@@ -42,4 +44,7 @@ class OrderService:
 
 
     def cancel_order(self, order_id: str):
-     return self._order_dao.cancel_order(order_id)
+        response = self._order_dao.cancel_order(order_id)
+        if not response:
+            raise HTTPException(status_code=404, detail=f"Order with id {order_id} not found")
+        return response
