@@ -1,19 +1,20 @@
 from http.client import HTTPException
 from datetime import datetime
+from turtle import pd
 
 from app.dao.book_dao import BookDAO
 from app.dto.catalog_dto import BookDTO
 
-
-
-COLUMNS = ["book_id","subject_code","Title","Price","stock_quantity",
-           "semester_available","date_added","date_updated",
-           "Program Related","availability"]
-
 class BookService:
     def __init__(self):
         self._book_dao = BookDAO()
-   
+        
+    def list_books(self):
+        result = self._book_dao.get_all()
+        # Only return rows where is_deleted == "false"
+        active_books = [book for book in result if book.is_deleted == "False"]
+        return active_books
+
     def add_new_book(self, order_form: BookDTO):
         # Auto-generate book_id if not provided
         
@@ -46,9 +47,48 @@ class BookService:
         }
     
     def book_stock_update(self):
-
         return self._book_dao.get_stock_by_subject_code()
     
+    def soft_delete_book(self, book_id: str):
+        book = self._book_dao.get_by_book_id(book_id)
+        if not book: 
+            return HTTPException(status_code=404, detail=f"Book with id {book_id} not found")
+            
+        book.date_updated = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        book.is_deleted = "True"
+        self._book_dao.update_book_flag(book)
+
+        return {"message": f"Book {book_id} deleted successfully"}
+
     #Book filtering
     def filter_books(self, program_related=None, title=None, semester_available=None):
-        return self._book_dao.filter_books(program_related, title, semester_available)
+        books = self._book_dao.get_all()
+
+        books = [b for b in books if b.is_deleted.strip().lower() == "false"]
+
+        if program_related:
+            books = [b for b in books if program_related.lower() in b.program_related.lower()]
+        if title:
+            books = [b for b in books if title.lower() in b.title.lower()]
+        if semester_available is not None:
+            books = [b for b in books if b.semester_available == int(semester_available)]
+
+        return books
+    
+    def update_book(self, book_id: str, updated_data: dict):
+        book = self._book_dao.get_by_book_id(book_id)
+        if not book:
+            raise HTTPException(status_code=404, detail=f"Book {book_id} not found")
+
+        # Apply updates to DTO
+        for column, value in updated_data.items():
+            if hasattr(book, column) and column != "book_id":
+                setattr(book, column, value)
+
+        # Always refresh timestamp with date + time
+        book.date_updated = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        # Persist changes
+        self._book_dao.update(book)
+
+        return {"message": f"Book {book_id} updated successfully!"}

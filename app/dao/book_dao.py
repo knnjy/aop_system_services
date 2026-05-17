@@ -12,13 +12,26 @@ class BookDAO:
     def __init__(self) -> None:
         self._books = load_csv("books/books_data.csv")
 
+    def _build_book_dto(self, book_row: pd.Series) -> BookDTO:
+        """Convert a book row to BookDTO"""
+        return BookDTO(
+            book_id=str(book_row["book_id"]),
+            subject_code=str(book_row["subject_code"]),
+            title=str(book_row["title"]),
+            price=float(book_row["price"]),
+            stock_quantity=int(book_row["stock_quantity"]),
+            semester_available=int(book_row["semester_available"]),
+            date_added=str(book_row["date_added"]),
+            date_updated=str(book_row["date_updated"]),
+            program_related=str(book_row["program_related"]),
+            availability=str(book_row["availability"]),
+            is_deleted=str(book_row["is_deleted"]),
+        )
+    
     def get_all(self) -> List[BookDTO]:
-        """Fetch all books"""
-        books = []
-        for _, row in self._books.iterrows():
-            book = self._build_book_dto(row)
-            books.append(book)
-        return books
+        books_df = load_csv("books/books_data.csv")
+        return [self._build_book_dto(row) for _, row in books_df.iterrows()]
+
 
     def get_by_book_id(self, book_id: int) -> Optional[BookDTO]:
         """Fetch a specific book by book_id"""
@@ -38,21 +51,9 @@ class BookDAO:
 
     def get_by_program(self, program: str) -> List[BookDTO]:
         """Fetch books filtered by program_related"""
-        matches = self._books[self._books["Program Related"] == program]
+        matches = self._books[self._books["program_related"] == program]
         books = []
         for _, row in matches.iterrows():
-            book = self._build_book_dto(row)
-            books.append(book)
-        return books
-
-    def get_available_books(self) -> List[BookDTO]:
-        """Fetch only available books that are not deleted"""
-        available = self._books[
-            (self._books["availability"] == "available") & 
-            (self._books["is_deleted"] == False)
-        ]
-        books = []
-        for _, row in available.iterrows():
             book = self._build_book_dto(row)
             books.append(book)
         return books
@@ -87,13 +88,13 @@ class BookDAO:
         new_row = pd.DataFrame({
             "book_id": [str(book.book_id)],
             "subject_code": [book.subject_code],
-            "Title": [book.title],
-            "Price": [str(book.price)],
+            "title": [book.title],
+            "price": [str(book.price)],
             "stock_quantity": [str(book.stock_quantity)],
             "semester_available": [str(book.semester_available)],
             "date_added": [book.date_added],
             "date_updated": [book.date_updated],
-            "Program Related": [book.program_related],
+            "program_related": [book.program_related],
             "availability": [book.availability],
             "is_deleted": [str(book.is_deleted)],
         })
@@ -105,21 +106,6 @@ class BookDAO:
         
         return book
 
-    def _build_book_dto(self, book_row: pd.Series) -> BookDTO:
-        """Convert a book row to BookDTO"""
-        return BookDTO(
-            book_id=int(book_row["book_id"]),
-            subject_code=str(book_row["subject_code"]),
-            title=str(book_row["Title"]),
-            price=float(book_row["Price"]),
-            stock_quantity=int(book_row["stock_quantity"]),
-            semester_available=int(book_row["semester_available"]),
-            date_added=str(book_row["date_added"]),
-            date_updated=str(book_row["date_updated"]),
-            program_related=str(book_row["Program Related"]),
-            availability=str(book_row["availability"]),
-            is_deleted=bool(book_row["is_deleted"]),
-        )
     def get_stock_by_subject_code(self) -> dict:
         """Return stock quantities grouped by subject_code"""
         if self._books.empty:
@@ -128,57 +114,41 @@ class BookDAO:
         grouped = self._books.groupby("subject_code")["stock_quantity"].sum()
         return grouped.to_dict()
     
-    # Load books with is_deleted check
-    def load_books(self) -> pd.DataFrame:
-        """Load books from CSV with is_deleted column check"""
-        # Replace the missing global variable with a direct local string path
-        target_path = "data/books/books_data.csv"
-        
-        df = pd.read_csv(target_path)
-        if "is_deleted" not in df.columns:
-            df["is_deleted"] = False
-        return df
+    def update_book_flag(self, book: BookDTO) -> BookDTO:
+        """Update an existing book row in the CSV file"""
+        books_df = load_csv("books/books_data.csv")
 
-    # Filter books by program, title, and semester
-    def filter_books(self, program_related=None, title=None, semester_available=None) -> List[dict]:
-        """Load CSV directly, filter, and return a list of plain dicts (no DTO mapping)."""
-        import pandas as pd
+        # Update the row by book_id
+        books_df.loc[books_df["book_id"] == book.book_id, "is_deleted"] = str(book.is_deleted)
+        books_df.loc[books_df["book_id"] == book.book_id, "date_updated"] = book.date_updated
 
-        target_path = "data/books/books_data.csv"
-        try:
-            df = pd.read_csv(target_path)
-        except Exception:
-            return []
+        # Save back to CSV
+        csv_path = DATA_DIR / "books" / "books_data.csv"
+        books_df.to_csv(csv_path, index=False)
 
-        # Filter out deleted rows if column exists
-        if "is_deleted" in df.columns:
-            df = df[df["is_deleted"].astype(str).str.lower().str.strip() != "true"]
+        # Refresh in-memory DataFrame
+        self._books = load_csv("books/books_data.csv")
 
-        # Apply dynamic filters
-        if program_related:
-            df = df[df["Program Related"].astype(str).str.contains(str(program_related).strip(), case=False, na=False, regex=False)]
+        return book
 
-        if title:
-            df = df[df["Title"].astype(str).str.contains(str(title).strip(), case=False, na=False, regex=False)]
+    def update(self, book: BookDTO) -> BookDTO:
+        books_df = load_csv("books/books_data.csv")
 
-        if semester_available is not None:
-            df["semester_available"] = pd.to_numeric(df["semester_available"], errors="coerce")
-            df = df[df["semester_available"] == int(semester_available)]
+        for field in book.__dataclass_fields__:
+            if field != "book_id":
+                value = getattr(book, field)
+                # Normalize booleans to strings
+                if isinstance(value, bool):
+                    value = "True" if value else "False"
+                books_df.loc[books_df["book_id"] == book.book_id, field] = value
 
-        output_books = []
-        for _, row in df.iterrows():
-            output_books.append({
-                "book_id": str(row.get("book_id", "")),
-                "subject_code": str(row.get("subject_code", "")),
-                "Title": str(row.get("Title", "")),
-                "Price": float(row.get("Price", 0)) if pd.notna(row.get("Price")) else 0.0,
-                "stock_quantity": int(row.get("stock_quantity", 0)) if pd.notna(row.get("stock_quantity")) else 0,
-                "semester_available": int(row.get("semester_available", 0)) if pd.notna(row.get("semester_available")) else 0,
-                "date_added": str(row.get("date_added", "")),
-                "date_updated": str(row.get("date_updated", "")),
-                "Program Related": str(row.get("Program Related", "")),
-                "availability": str(row.get("availability", ""))
-            })
+        # Save back to CSV
+        csv_path = DATA_DIR / "books" / "books_data.csv"
+        books_df.to_csv(csv_path, index=False)
 
-        return output_books
-    
+        # Refresh in-memory DataFrame
+        self._books = load_csv("books/books_data.csv")
+
+        return book
+
+
