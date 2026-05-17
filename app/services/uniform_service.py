@@ -1,14 +1,13 @@
 from http.client import HTTPException
 from datetime import datetime
-from typing import Union, List
+from typing import Dict, Optional, Union, List
 
 import pandas as pd
 
 from app.dao.uniform_dao import UniformDAO
-from app.dto.catalog_dto import UniformDTO, SizeDTO
+from app.dto.catalog_dto import SizeUpdate, UniformDTO, SizeDTO
 from app.utils.csv_loader import load_csv, DATA_DIR
 from app.utils.uniform_utils import get_size_abbreviation, extract_prefix
-from app.utils.uniform_utils import clean_row, strip_unwanted_fields
 
 class UniformService:
     def __init__(self):
@@ -69,89 +68,70 @@ class UniformService:
             "sizes_added": len(size_dtos)
         }
 
-    def _safe_write_csv(self, df: pd.DataFrame, csv_name: str):
-        csv_path = DATA_DIR / "uniforms" / csv_name
-        df.to_csv(csv_path, index=False)
 
     def update_uniform(
         self,
-        uniform_code: str,
-        product_name: str = None,
-        price: float = None,
-        uniform_type: str = None,
-        size: str = None,
-        length: Union[float, str] = None,
-        waistline: Union[float, str] = None,
-        bust_chest: Union[float, str] = None,
-        hips: Union[float, str] = None,
-        shoulder: Union[float, str] = None,
-        bottom_width: Union[float, str] = None
+        product_id: str,
+        updates: Dict[str, Union[str, float, bool]],
+        size_updates: Optional[List[Union[Dict, SizeUpdate]]] = None
     ):
-        products = load_csv("uniforms/products.csv")
-        uniform_code_str = str(uniform_code).strip()
-        mask = products["product_id"].astype(str).str.strip() == uniform_code_str
+        """
+        Update a uniform's product details and/or sizes.
+        - product_id: the ID of the uniform to update
+        - updates: dict of product fields to update (e.g. {"product_name": "New Name", "price": 950.0})
+        - size_updates: optional list of dicts or Pydantic SizeUpdate objects
+        """
+        # Fetch the uniform
+        uniform = self._uniform_dao.get_by_product_id(product_id)
+        if not uniform:
+            return {"error": "Uniform not found", "product_id": product_id}
 
-        if not mask.any():
-            return {"error": "Uniform not found"}
+        # Check if deleted (handle both string and boolean)
+        is_deleted = uniform.is_deleted
+        if isinstance(is_deleted, str):
+            is_deleted = is_deleted.lower() in ("true", "1")
+        if is_deleted:
+            return {"error": "Cannot update a deleted uniform", "product_id": product_id}
 
-        if "is_deleted" in products.columns:
-            deleted_mask = mask & products["is_deleted"].isin([True, "True", "true", 1, "1"])
-            if deleted_mask.any():
-                products.loc[deleted_mask, "is_deleted"] = False
+        # Apply product updates
+        for key, value in updates.items():
+            if hasattr(uniform, key) and value is not None:
+                setattr(uniform, key, value)
 
-        if product_name is not None:
-            products.loc[mask, "product_name"] = product_name
+        # Always update date_updated timestamp
+        uniform.date_updated = datetime.now()
 
-        if price is not None:
-            products.loc[mask, "price"] = price
+        # Apply size updates if provided
+        if size_updates:
+            for size_update in size_updates:
+                # Convert Pydantic model to dict if needed
+                if not isinstance(size_update, dict):
+                    size_update = size_update.dict()
 
-        if uniform_type is not None:
-            products.loc[mask, "uniform_type"] = uniform_type
+                for size in (uniform.sizes or []):
+                    if size.uniform_size_id == size_update.get("uniform_size_id"):
+                        for key, value in size_update.items():
+                            if hasattr(size, key) and value is not None:
+                                setattr(size, key, value)
 
-        if "date_updated" in products.columns:
-            products.loc[mask, "date_updated"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        # Persist changes back to CSV
+        self._uniform_dao.save_uniform(uniform, uniform.sizes or [])
 
-        self._safe_write_csv(products, "products.csv")
-
-        # ✅ Updated to lowercase column names
-        size_updates = {
-            "length": length,
-            "waistline": waistline,
-            "bust_chest": bust_chest,
-            "hips": hips,
-            "shoulder": shoulder,
-            "bottom_width": bottom_width
-        }
-
-        if size is not None and any(v is not None for v in size_updates.values()):
-            sizes_df = load_csv("uniforms/product_sizes.csv")
-            sizes_df.columns = sizes_df.columns.str.strip()
-
-            # Updated "Size" to "size"
-            size_mask = (
-                sizes_df["product_id"].astype(str).str.strip() == uniform_code_str
-            ) & (
-                sizes_df["size"].astype(str).str.strip() == str(size).strip()
-            )
-
-            if size_mask.any():
-                for column, value in size_updates.items():
-                    if value is not None:
-                        sizes_df.loc[size_mask, column] = value
-                self._safe_write_csv(sizes_df, "product_sizes.csv")
-
+        # Return updated uniform as JSON-friendly dict
         return {
-            "success": True,
-            "message": f"Uniform {uniform_code} updated successfully."
+            "message": f"Uniform {product_id} updated successfully",
+            "product_id": uniform.product_id,
+            "product_name": uniform.product_name,
         }
 
     def list_uniforms(self):
         """Return all uniforms with sizes (formatted JSON response)"""
         uniforms = self._uniform_dao.get_all()
-
         result = []
 
         for uniform in uniforms:
+            if uniform.is_deleted.lower() == "true":
+                continue
             result.append({
                 "product_id": uniform.product_id,
                 "product_name": uniform.product_name,
@@ -159,62 +139,79 @@ class UniformService:
                 "uniform_type": uniform.uniform_type,
                 "sizes": [
                     {
-                        "size": size.size,
-                        "length": size.length,
-                        "waistline": size.waistline,
-                        "bust_chest": size.bust_chest,
-                        "hips": size.hips,
-                        "shoulder": size.shoulder,
-                        "bottom_width": size.bottom_width,
-                        "product_stock": size.product_stock
+                        k: v
+                        for k, v in {
+                            "size": size.size,
+                            "length": size.length,
+                            "waistline": size.waistline,
+                            "bust_chest": size.bust_chest,
+                            "hips": size.hips,
+                            "shoulder": size.shoulder,
+                            "bottom_width": size.bottom_width,
+                            "product_stock": size.product_stock,
+                        }.items()
+                        if v not in (None, "", "NaN")
                     }
                     for size in (uniform.sizes or [])
                 ]
             })
 
         return result
-    
 
-#Uniform Filter    
-class UniformService:
-    def __init__(self):
-        self.dao = UniformDAO
+    def filter_uniforms(self, uniform_type: str):
+        """Return uniforms filtered by uniform_type (only non-deleted)"""
+        uniforms = self._uniform_dao.get_all()
 
-    def list_uniforms(self, uniform_type: str = None) -> List[dict]:
-        df = self.dao.load_uniforms()
-        sizes_df = self.dao.load_sizes()
+        result = []
 
-        df['product_id'] = df['product_id'].astype(str).str.strip()
-        sizes_df['product_id'] = sizes_df['product_id'].astype(str).str.strip()
+        for uniform in uniforms:
+            # Skip deleted uniforms
+            if uniform.is_deleted.lower() == "true":
+                continue
 
-        df = df[df['is_deleted'].isin([False, 'False', 'false', 0, '0'])]
+            # Only include matching uniform_type
+            if uniform.uniform_type != uniform_type:
+                continue
 
-        if uniform_type:
-            cleaned_uniform_type = uniform_type.strip().lower()
-            df = df[df['uniform_type'].astype(str).str.strip().str.lower() == cleaned_uniform_type]
+            result.append({
+                "product_id": uniform.product_id,
+                "product_name": uniform.product_name,
+                "price": uniform.price,
+                "uniform_type": uniform.uniform_type,
+                "sizes": [
+                    {
+                        k: v
+                        for k, v in {
+                            "size": size.size,
+                            "length": size.length,
+                            "waistline": size.waistline,
+                            "bust_chest": size.bust_chest,
+                            "hips": size.hips,
+                            "shoulder": size.shoulder,
+                            "bottom_width": size.bottom_width,
+                            "product_stock": size.product_stock,
+                        }.items()
+                        if v not in (None, "", "NaN")
+                    }
+                    for size in (uniform.sizes or [])
+                ]
+            })
 
-        uniforms: List[dict] = []
-        for _, product in df.iterrows():
-            product_data = clean_row(product)
-            pid = product['product_id']
-            product_sizes = sizes_df[sizes_df['product_id'] == pid]
+        return result
 
-            sizes_list: List[SizeDTO] = []
-            for _, size_row in product_sizes.iterrows():
-                cleaned_size = clean_row(size_row)
-                if cleaned_size:
-                    sizes_list.append(SizeDTO(**cleaned_size))
-
-            uniform = UniformDTO(**product_data, sizes=sizes_list)
-            data = strip_unwanted_fields(uniform.__dict__.copy())  
-
-            # Clean nested sizes too
-            cleaned_sizes = []
-            for size in data.get("sizes", []):
-                size_data = strip_unwanted_fields(size.__dict__.copy())
-                cleaned_sizes.append(size_data)
-
-            data["sizes"] = cleaned_sizes
-            uniforms.append(data)
-
-        return uniforms
+    def delete_uniform(self, product_id: str) -> dict:
+        """Soft delete a uniform by product_id"""
+        uniform = self._uniform_dao.get_by_product_id(product_id)
+        if not uniform:
+            return {"error": "Uniform not found", "product_id": product_id}
+        
+        success = self._uniform_dao.soft_delete_uniform(product_id)
+        
+        if success:
+            return {
+                "success": True,
+                "message": f"Uniform {product_id} marked as deleted.",
+                "product_id": product_id
+            }
+        else:
+            return {"error": "Failed to delete uniform", "product_id": product_id}

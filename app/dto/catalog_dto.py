@@ -27,7 +27,7 @@ class UniformDTO:
     uniform_type: str = ""
     date_added: Optional[datetime] = None
     date_updated: Optional[datetime] = None
-    is_deleted: bool = False
+    is_deleted: str = None
     sizes: Optional[List[SizeDTO]] = None
 
 
@@ -45,3 +45,20 @@ class BookDTO:
     program_related: str = ""
     availability: str = "available"
     is_deleted: bool = False
+
+
+from pydantic import BaseModel
+
+class SizeUpdate(BaseModel):
+    uniform_size_id: str
+    product_stock: Optional[int] = None
+    length: Optional[float] = None
+    waistline: Optional[float] = None
+    bust_chest: Optional[float] = None
+    hips: Optional[float] = None
+    shoulder: Optional[float] = None
+    bottom_width: Optional[float] = None
+
+class UniformUpdateRequest(BaseModel):
+    updates: dict
+    size_updates: Optional[List[SizeUpdate]] = None
